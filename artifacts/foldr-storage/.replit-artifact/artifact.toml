@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "foldr.storage"
+version = "1.0.0"
+id = "artifacts/foldr-storage"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24856
+
+[services.development]
+run = "pnpm --filter @workspace/foldr-storage run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/foldr-storage", "run", "build" ]
+publicDir = "artifacts/foldr-storage/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24856"
+BASE_PATH = "/"

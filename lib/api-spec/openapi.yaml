@@ -1,0 +1,853 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: foldr.storage API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: files
+    description: File management operations
+  - name: share
+    description: Public share operations
+  - name: status
+    description: Storage status operations
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Email already in use
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout current user
+      responses:
+        "200":
+          description: Logged out successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current authenticated user
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Current user info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/profile:
+    put:
+      operationId: updateProfile
+      tags: [auth]
+      summary: Update user profile (display name, timezone)
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileRequest"
+      responses:
+        "200":
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/account:
+    delete:
+      operationId: deleteAccount
+      tags: [auth]
+      summary: Permanently delete the current user account
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeleteAccountRequest"
+      responses:
+        "200":
+          description: Account deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          description: Not authenticated or wrong password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/revoke-sessions:
+    post:
+      operationId: revokeSessions
+      tags: [auth]
+      summary: Sign out of all sessions (invalidates all active tokens)
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: All sessions revoked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /files:
+    get:
+      operationId: listFiles
+      tags: [files]
+      summary: List user's files
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of files
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FileListResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /files/upload:
+    post:
+      operationId: uploadFile
+      tags: [files]
+      summary: Upload a file
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                encrypt:
+                  type: boolean
+                  default: false
+      responses:
+        "201":
+          description: File uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/File"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Upload failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /files/{id}:
+    get:
+      operationId: getFile
+      tags: [files]
+      summary: Get file metadata by ID
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: File metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/File"
+        "404":
+          description: File not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteFile
+      tags: [files]
+      summary: Delete a file
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: File deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "404":
+          description: File not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /files/{id}/download:
+    get:
+      operationId: downloadFile
+      tags: [files]
+      summary: Download a file (redirect for plain, stream for encrypted)
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "302":
+          description: Redirect to IPFS gateway (plain files)
+        "200":
+          description: Decrypted file stream (encrypted files)
+        "404":
+          description: File not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /files/{id}/share-link:
+    post:
+      operationId: createShareLink
+      tags: [files]
+      summary: Create a public share link for a file
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                expiresInHours:
+                  type: integer
+                  description: Hours until link expires (omit for no expiry)
+      responses:
+        "201":
+          description: Share link created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShareLink"
+        "404":
+          description: File not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /files/{id}/share-encrypted:
+    post:
+      operationId: shareEncryptedFile
+      tags: [files]
+      summary: Share an encrypted file with another wallet address
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShareEncryptedRequest"
+      responses:
+        "200":
+          description: File shared successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          description: File is not encrypted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: File not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /files/{id}/revoke-access:
+    delete:
+      operationId: revokeFileAccess
+      tags: [files]
+      summary: Revoke access to an encrypted file from a wallet address
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RevokeAccessRequest"
+      responses:
+        "200":
+          description: Access revoked successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          description: File is not encrypted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: File not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /files/{id}/set-token-gate:
+    post:
+      operationId: setTokenGate
+      tags: [files]
+      summary: Set token-gated access condition on an encrypted file
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TokenGateRequest"
+      responses:
+        "200":
+          description: Token gate applied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          description: File is not encrypted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: File not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /files/{id}/decrypt:
+    get:
+      operationId: decryptFile
+      tags: [files]
+      summary: Decrypt and stream an encrypted file
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Decrypted file stream
+        "400":
+          description: File is not encrypted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: File not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /share/{token}:
+    get:
+      operationId: getSharedFile
+      tags: [share]
+      summary: Access a publicly shared file (no auth required)
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Shared file info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SharedFileResponse"
+        "404":
+          description: Share link not found or expired
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /status:
+    get:
+      operationId: getStorageStatus
+      tags: [status]
+      summary: Get storage backend status
+      responses:
+        "200":
+          description: Storage backend status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StorageStatus"
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: token
+
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+      required:
+        - error
+
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+
+    RegisterRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        displayName:
+          type: string
+          nullable: true
+        walletAddress:
+          type: string
+          nullable: true
+        timezone:
+          type: string
+          nullable: true
+        totpEnabled:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - email
+        - createdAt
+
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        message:
+          type: string
+      required:
+        - user
+        - message
+
+    File:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        name:
+          type: string
+        size:
+          type: integer
+        mimeType:
+          type: string
+        cid:
+          type: string
+        lighthouseFileId:
+          type: string
+          nullable: true
+        storageBackend:
+          type: string
+          enum: [lighthouse, fallback]
+        isEncrypted:
+          type: boolean
+        isDeleted:
+          type: boolean
+        accessCondition:
+          type: object
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - userId
+        - name
+        - size
+        - mimeType
+        - cid
+        - storageBackend
+        - isEncrypted
+        - isDeleted
+        - createdAt
+        - updatedAt
+
+    FileListResponse:
+      type: object
+      properties:
+        files:
+          type: array
+          items:
+            $ref: "#/components/schemas/File"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - files
+        - total
+        - page
+        - limit
+
+    ShareLink:
+      type: object
+      properties:
+        id:
+          type: string
+        fileId:
+          type: string
+        token:
+          type: string
+        url:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - fileId
+        - token
+        - url
+        - createdAt
+
+    SharedFileResponse:
+      type: object
+      properties:
+        file:
+          $ref: "#/components/schemas/File"
+        shareLink:
+          $ref: "#/components/schemas/ShareLink"
+        downloadUrl:
+          type: string
+      required:
+        - file
+        - shareLink
+        - downloadUrl
+
+    ShareEncryptedRequest:
+      type: object
+      required: [recipientAddress]
+      properties:
+        recipientAddress:
+          type: string
+          description: Ethereum wallet address of the recipient
+
+    RevokeAccessRequest:
+      type: object
+      required: [revokeAddress]
+      properties:
+        revokeAddress:
+          type: string
+          description: Ethereum wallet address to revoke access from
+
+    TokenGateCondition:
+      type: object
+      required: [chain, method, standardContractType, contractAddress, returnValueTest, parameters]
+      properties:
+        id:
+          type: integer
+        chain:
+          type: string
+          description: "e.g. Ethereum, Polygon, Optimism"
+        method:
+          type: string
+          description: "e.g. balanceOf"
+        standardContractType:
+          type: string
+          description: "e.g. ERC721, ERC20"
+        contractAddress:
+          type: string
+        returnValueTest:
+          type: object
+          properties:
+            comparator:
+              type: string
+            value:
+              type: string
+          required: [comparator, value]
+        parameters:
+          type: array
+          items:
+            type: string
+
+    TokenGateRequest:
+      type: object
+      required: [conditions]
+      properties:
+        conditions:
+          type: array
+          items:
+            $ref: "#/components/schemas/TokenGateCondition"
+        aggregator:
+          type: string
+          description: "Logical grouping of condition ids, e.g. ([1])"
+
+    UpdateProfileRequest:
+      type: object
+      properties:
+        displayName:
+          type: string
+          nullable: true
+        timezone:
+          type: string
+          nullable: true
+
+    DeleteAccountRequest:
+      type: object
+      required: [password]
+      properties:
+        password:
+          type: string
+
+    StorageStatus:
+      type: object
+      properties:
+        backend:
+          type: string
+          enum: [lighthouse, fallback]
+      required:
+        - backend

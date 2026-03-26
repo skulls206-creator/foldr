@@ -1,0 +1,45 @@
+<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0DCCF2"/>
+      <stop offset="100%" stop-color="#7E47EB"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Folder body + tab as one unified path -->
+  <!-- Tab is top-left; body is the full-width lower section -->
+  <path
+    d="M10 44
+       L10 82 Q10 91 19 91
+       L81 91 Q90 91 90 82
+       L90 44 Q90 35 81 35
+       L54 35 Q46 35 42 28
+       L38 21 Q34 13 25 13
+       L19 13 Q10 13 10 22
+       Z"
+    fill="url(#grad)"
+  />
+
+  <!-- Subtle top-shine overlay (top ~45% of folder) -->
+  <path
+    d="M10 44
+       L10 60 L90 60
+       L90 44 Q90 35 81 35
+       L54 35 Q46 35 42 28
+       L38 21 Q34 13 25 13
+       L19 13 Q10 13 10 22
+       Z"
+    fill="url(#shine)"
+  />
+
+  <!-- Ridge line where tab meets body — gives depth -->
+  <line x1="10" y1="44" x2="90" y2="44" stroke="white" stroke-opacity="0.18" stroke-width="1.5"/>
+</svg>

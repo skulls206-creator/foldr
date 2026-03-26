@@ -1,0 +1,19 @@
+packages:
+  "framer-motion": "For smooth page transitions and modal animations"
+  "react-dropzone": "For drag-and-drop file upload functionality"
+  "date-fns": "For formatting file upload dates"
+  "@hookform/resolvers": "For Zod form validation"
+  "react-hook-form": "For robust form handling"
+  "clsx": "For conditional class names"
+  "tailwind-merge": "For merging tailwind classes safely"
+  "lucide-react": "For beautiful consistent icons"
+
+images:
+  - path: "artifacts/foldr-storage/public/images/auth-bg.png"
+    description: "Dark, sleek, professional abstract gradient mesh with deep indigo and electric cyan hues, very subtle data-node glowing points, suitable for a secure storage product background"
+    aspect_ratio: "16:9"
+
+notes:
+  - Using XHR for multipart uploads to track progress, bypassing the standard generated fetch client for the upload endpoint only.
+  - Assuming JWT is handled via httpOnly cookies automatically by the browser.
+  - Relying on @workspace/api-client-react for all standard API hooks.

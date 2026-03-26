@@ -1,0 +1,175 @@
+#1 - Build foldr.storage — IPFS Drive Clone
+What & Why
+Build a full-stack Google Drive/Dropbox clone called "foldr.storage" using Lighthouse.storage (IPFS + Filecoin) as the primary backend. Polished Drive-like UI with drag-and-drop uploads, full Kavach encryption (share, revoke, token-gate, decrypt), and a Pinata fallback. Annual plan — real deletion from Lighthouse is supported.
+
+Done looks like
+Polished React web app at / — Drive-like layout (sidebar, grid/list, top bar)
+Register/login with email+password (bcrypt + JWT in httpOnly cookie)
+Upload via button or drag-and-drop; per-file progress bars; encrypt toggle
+File grid shows name, size, type icon, date, storage badge (Lighthouse/Fallback), lock icon for encrypted
+Plain download: redirect to Lighthouse IPFS gateway
+Encrypted download: server fetches decryption key via Kavach, streams decrypted file back
+Share encrypted file with another wallet address (grants decryption shard access)
+Revoke access from a wallet address
+Token-gated access: set NFT/token ownership condition on an encrypted file
+Delete: soft-delete in DB + lighthouse.deleteFile by UUID (Annual plan = real deletion)
+Public share links at /share/:token — no login required
+GET /api/status → { backend: "lighthouse" | "fallback" }
+Auto-fallback to Pinata if LIGHTHOUSE_API_KEY missing or initialization fails
+Out of scope
+Filecoin deal management
+Admin panel, multi-tenant
+Mobile app
+Browser Passkey/MetaMask auth in this iteration (server uses signed message + JWT; frontend wallet connect is a future enhancement)
+Confirmed Lighthouse SDK signatures (verified from official docs)
+Kavach import
+import kavach from "@lighthouse-web3/kavach"  // default import
+import lighthouse from "@lighthouse-web3/sdk"
+import { ethers } from "ethers"
+Server-side auth helper (used for ALL encryption operations)
+// Generates a JWT from ETH_PRIVATE_KEY — reuse per request or cache per session
+const getKavachJWT = async (privateKey: string): Promise<string> => {
+  const signer = new ethers.Wallet(privateKey)
+  const authMessage = await kavach.getAuthMessage(signer.address)
+  const signedMessage = await signer.signMessage(authMessage.message)
+  const { JWT } = await kavach.getJWT(signer.address, signedMessage)
+  return JWT
+}
+// signer.address is the server's wallet public key — store as WALLET_ADDRESS derived from ETH_PRIVATE_KEY
+Plain upload — lighthouse.uploadBuffer (buffer, no temp file needed)
+const response = await lighthouse.uploadBuffer(buffer, apiKey)
+// response.data.Hash = CID
+// response.data.Name = filename
+// response.data.Size = size string
+Encrypted upload — lighthouse.uploadEncrypted (REQUIRES TEMP FILE PATH, not Buffer)
+// IMPORTANT: uploadEncrypted only accepts a file path string, not a Buffer.
+// Multer stays in memoryStorage. Write buffer to a temp file, pass path to Lighthouse, then delete.
+import fs from "fs/promises"
+import os from "os"
+import path from "path"
+import crypto from "crypto"
+// Inside the upload route handler, after multer populates req.file:
+const tmpDir = os.tmpdir()
+const tempName = crypto.randomBytes(16).toString("hex") + "-" + file.originalname
+const tempPath = path.join(tmpDir, tempName)
+try {
+  await fs.writeFile(tempPath, file.buffer)
+  const jwt = await getKavachJWT(process.env.ETH_PRIVATE_KEY)
+  const walletAddress = new ethers.Wallet(process.env.ETH_PRIVATE_KEY).address
+  const response = await lighthouse.uploadEncrypted(tempPath, apiKey, walletAddress, jwt)
+  // response.data[0].Hash = encrypted CID
+  // response.data[0].Name, response.data[0].Size
+} finally {
+  await fs.unlink(tempPath).catch(() => {})  // best-effort cleanup, never throws
+}
+List files — paginated
+const response = await lighthouse.getUploads(apiKey, lastKey ?? null)
+// response.data.fileList[i]: { id (UUID), cid, fileName, mimeType, createdAt, fileSizeInBytes, encryption: boolean }
+// response.data.totalFiles: number
+// Pass id of last element as lastKey for next page (2000 per page)
+// STORE response.data.fileList[i].id as lighthouseFileId in DB — needed for deletion
+Delete file — Annual plan = real deletion
+// fileId = UUID from getUploads(), NOT the CID
+await lighthouse.deleteFile(apiKey, lighthouseFileId)
+// Strategy: always soft-delete (isDeleted=true) in DB first,
+// then attempt lighthouse.deleteFile — if it fails, log and continue (file stays on IPFS, hidden from UI)
+Download plain file — gateway redirect
+`https://gateway.lighthouse.storage/ipfs/${cid}`
+// Simple 302 redirect from GET /api/files/:id/download
+Share encrypted file with another user
+const jwt = await getKavachJWT(process.env.ETH_PRIVATE_KEY)
+const walletAddress = new ethers.Wallet(process.env.ETH_PRIVATE_KEY).address
+await lighthouse.shareFile(walletAddress, [recipientWalletAddress], cid, jwt)
+// Response: { data: { cid, shareTo: [...], status: 'Success' } }
+Revoke file access (function is revokeFileAccess, NOT revokeAccess)
+const jwt = await getKavachJWT(process.env.ETH_PRIVATE_KEY)
+const walletAddress = new ethers.Wallet(process.env.ETH_PRIVATE_KEY).address
+await lighthouse.revokeFileAccess(walletAddress, [revokeFromAddress], cid, jwt)
+// Response: { data: { cid, revokeTo: [...], status: 'Success' } }
+Token-gated access — set condition
+const jwt = await getKavachJWT(process.env.ETH_PRIVATE_KEY)
+const walletAddress = new ethers.Wallet(process.env.ETH_PRIVATE_KEY).address
+const conditions = [{
+  id: 1,
+  chain: "Optimism",            // e.g. "Ethereum", "Polygon", "Optimism"
+  method: "balanceOf",          // contract method
+  standardContractType: "ERC721",
+  contractAddress: "0x...",
+  returnValueTest: { comparator: ">=", value: "1" },
+  parameters: [":userAddress"]
+}]
+const aggregator = "([1])"      // logical grouping of condition ids
+await lighthouse.applyAccessCondition(walletAddress, cid, jwt, conditions, aggregator)
+// Response: { data: { cid, status: 'Success' } }
+Decrypt encrypted file (server-side)
+const jwt = await getKavachJWT(process.env.ETH_PRIVATE_KEY)
+const walletAddress = new ethers.Wallet(process.env.ETH_PRIVATE_KEY).address
+// Step 1: Get the raw decryption key from Kavach (server-safe, no browser APIs)
+const keyObject = await lighthouse.fetchEncryptionKey(cid, walletAddress, jwt)
+// keyObject.data.key = hex string of the raw symmetric key
+// Step 2: Fetch the encrypted file bytes from the IPFS gateway
+const encryptedResponse = await fetch(`https://gateway.lighthouse.storage/ipfs/${cid}`)
+const encryptedBuffer = Buffer.from(await encryptedResponse.arrayBuffer())
+// Step 3: Decrypt using Node.js crypto directly — bypasses lighthouse.decryptFile
+// which may rely on browser-only Blob/DOM APIs.
+// At build time: inspect node_modules/@lighthouse-web3/kavach to confirm the
+// exact algorithm (expected: AES-256-GCM), key length, and IV/tag layout,
+// then implement crypto.createDecipheriv accordingly.
+// If the SDK exports a Node-compatible decrypt helper, prefer that over manual crypto.
+// Fallback shape (AES-256-GCM assumed):
+import crypto from "crypto"
+const key = Buffer.from(keyObject.data.key, "hex")
+const iv = encryptedBuffer.slice(0, 12)
+const authTag = encryptedBuffer.slice(12, 28)
+const ciphertext = encryptedBuffer.slice(28)
+const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv)
+decipher.setAuthTag(authTag)
+const decrypted = Buffer.concat([decipher.update(ciphertext), decipher.final()])
+// Stream decrypted back to client with correct Content-Type header
+Build-time action: Before writing the decrypt route, inspect node_modules/@lighthouse-web3/kavach/dist/ TypeScript types and README to confirm: (1) exact algorithm, key/IV/tag byte layout, (2) whether the SDK exports a Node-compatible decrypt utility. Use the SDK helper if it exists; fall back to the manual crypto.createDecipheriv approach above if not.
+
+Fallback adapter — Pinata REST
+// POST https://api.pinata.cloud/pinning/pinFileToIPFS
+// Authorization: Bearer PINATA_JWT
+// Returns: { IpfsHash: CID, PinSize, Timestamp }
+// Gateway: https://gateway.pinata.cloud/ipfs/<CID>
+Required environment variables (all confirmed set)
+Variable	Purpose
+LIGHTHOUSE_API_KEY	Lighthouse upload API
+ETH_PRIVATE_KEY	Ethereum wallet for Kavach signing (ETH never leaves server)
+PINATA_JWT	Pinata fallback bearer token
+JWT_SECRET	App session token signing
+DATABASE_URL	PostgreSQL (auto-provisioned)
+Tasks
+Create the react-vite frontend artifact — Bootstrap react-vite artifact at / (slug: foldr-storage).
+
+Write the OpenAPI spec and run codegen — Add all paths to lib/api-spec/openapi.yaml: auth (register, login, logout, me), files (upload multipart, list, get-by-id, download, delete, share-link, share-encrypted, revoke-access, set-token-gate, decrypt), status. Include all schemas (User, File, ShareLink, StorageStatus, ErrorResponse). Run codegen immediately after.
+
+Set up database schema — Drizzle tables in lib/db/src/schema/:
+
+users: id (uuid), email (unique), passwordHash, walletAddress (text, nullable), createdAt, updatedAt
+files: id (uuid), userId (fk→users), name, size (bigint), mimeType, cid, lighthouseFileId (text, nullable — UUID from Lighthouse, for deletion), storageBackend (enum: lighthouse|fallback), isEncrypted (bool), isDeleted (bool default false), accessCondition (jsonb nullable), createdAt, updatedAt
+shareLinks: id (uuid), fileId (fk→files), token (unique), expiresAt (nullable), createdAt Run pnpm --filter @workspace/db run push.
+Build backend routes — Before writing any Lighthouse/Kavach calls, inspect the installed SDK types: check node_modules/@lighthouse-web3/sdk/types/ and node_modules/@lighthouse-web3/kavach/dist/ to confirm argument order and response shapes match the plan. Adjust any calls where the real signature differs from docs. Then implement all routes in artifacts/api-server/src/routes/:
+
+Auth: POST /register (bcrypt+12), POST /login (compare hash → set JWT cookie), POST /logout (clear cookie), GET /me (verify JWT middleware)
+Files: POST /upload (multer → plain uses uploadBuffer, encrypted writes temp file → uploadEncrypted → deletes temp; store lighthouseFileId from response), GET / (list, user-scoped, paginated), GET /:id/download (302 → gateway URL), DELETE /:id (soft-delete + lighthouse.deleteFile by lighthouseFileId), POST /:id/share-link (generate random token → shareLinks table), POST /:id/share-encrypted (body: recipientAddress → lighthouse.shareFile), DELETE /:id/revoke-access (body: address → lighthouse.revokeFileAccess), POST /:id/token-gate (body: conditions+aggregator → lighthouse.applyAccessCondition), GET /:id/decrypt (Kavach flow → stream decrypted blob)
+Status: GET /status → { backend: "lighthouse" | "fallback" }
+Storage adapter: StorageAdapter interface + LighthouseStorageAdapter (@lighthouse-web3/sdk) + FallbackIpfsAdapter (Pinata REST). On startup: try init Lighthouse with API key; on failure log warning and set adapter to Fallback.
+JWT middleware: verify JWT from httpOnly cookie → attach userId to request
+All file routes require auth middleware; /share/:token route is public
+Build frontend — Call generateFrontend() with dark professional design style. Includes: login/register screens; sidebar (My Files, Encrypted section, Recent, storage meter); top bar ("foldr.storage" wordmark, Upload button, user menu); file grid + list toggle with type icons; drag-and-drop with per-file progress + encrypt toggle; file context menu (download, copy share link, share with address, revoke access, set token gate, delete); lock icon on encrypted files; Lighthouse/Fallback badge; image/video preview modal; encrypted download via decrypt endpoint; public /share/:token page; token-gate dialog with chain/contract/condition fields.
+
+Wire up, provision DB, create .env.example — Run DB push, verify all env vars loaded, create .env.example with all required keys documented. Smoke-test upload → list → download → encrypt → decrypt → share → revoke full flow.
+
+Relevant files
+lib/api-spec/openapi.yaml
+lib/db/src/schema/index.ts
+lib/db/drizzle.config.ts
+artifacts/api-server/src/app.ts
+artifacts/api-server/src/routes/index.ts
+artifacts/api-server/src/routes/health.ts
+artifacts/api-server/package.json
+artifacts/api-server/src/index.ts
+pnpm-workspace.yaml
+replit.md

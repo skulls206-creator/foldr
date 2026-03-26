@@ -1,0 +1,14 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "xSJwbZtJr-0Z68erKul8r"
+uri = "file://artifacts/foldr-storage/public/favicon.svg"
+type = "image"
+title = "foldr.storage logo (SVG)"
+
+[[outputs]]
+id = "FFDBQal0__TAOA5YqvjkH"
+uri = "file://artifacts/foldr-storage/public/folder-icon.svg"
+type = "image"
+title = "Folder icon (SVG) — transparent background"

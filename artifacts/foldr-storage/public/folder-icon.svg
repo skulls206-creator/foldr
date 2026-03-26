@@ -1,0 +1,106 @@
+<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+
+    <!-- Body: sky blue → rich blue -->
+    <linearGradient id="body" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0%" stop-color="#5AC8FA"/>
+      <stop offset="100%" stop-color="#007AFF"/>
+    </linearGradient>
+
+    <!-- Tab: a touch lighter so it reads as separate -->
+    <linearGradient id="tab" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#72D4FF"/>
+      <stop offset="100%" stop-color="#1A94FF"/>
+    </linearGradient>
+
+    <!-- Gloss highlight — top half reflection -->
+    <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#fff" stop-opacity="0.38"/>
+      <stop offset="55%"  stop-color="#fff" stop-opacity="0.04"/>
+      <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Depth vignette — bottom edge goes slightly darker -->
+    <linearGradient id="depth" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="transparent"/>
+      <stop offset="100%" stop-color="#000" stop-opacity="0.18"/>
+    </linearGradient>
+
+    <!-- Soft drop-shadow on the body -->
+    <filter id="shadow" color-interpolation-filters="sRGB"
+            x="-8%" y="-4%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="3" stdDeviation="4"
+                    flood-color="#003a99" flood-opacity="0.35"/>
+    </filter>
+
+    <!-- Subtle inner shadow beneath the tab-body seam -->
+    <linearGradient id="seamShadow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"  stop-color="#000" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="transparent"/>
+    </linearGradient>
+
+  </defs>
+
+  <!-- ── Back edge (darker face peeking behind body → 3-D illusion) ──────── -->
+  <path
+    d="M17 48
+       L17 84 Q17 92 25 92
+       L83 92 Q92 92 92 84
+       L92 42 L54 42
+       Q47 42 43 35 L40 28
+       Q36 21 29 21
+       L25 21 Q17 21 17 29
+       Z"
+    fill="#0052B8"
+  />
+
+  <!-- ── Tab ──────────────────────────────────────────────────────────────── -->
+  <path
+    d="M8 48
+       L8 34 Q8 27 15 27
+       L31 27 Q38 27 41.5 34
+       L46 42 L92 42
+       L92 48 Z"
+    fill="url(#tab)"
+  />
+
+  <!-- ── Main folder body ─────────────────────────────────────────────────── -->
+  <path
+    d="M8 48
+       L92 48
+       L92 84 Q92 92 84 92
+       L16 92 Q8 92 8 84 Z"
+    fill="url(#body)"
+    filter="url(#shadow)"
+  />
+
+  <!-- ── Gloss on body (top ~40%) ─────────────────────────────────────────── -->
+  <path
+    d="M8 48 L92 48 L92 66 L8 66 Z"
+    fill="url(#gloss)"
+  />
+
+  <!-- ── Gloss on tab ──────────────────────────────────────────────────────── -->
+  <path
+    d="M8 48 L8 34 Q8 27 15 27 L31 27 Q38 27 41.5 34 L46 42 L92 42 L92 48 Z"
+    fill="url(#gloss)"
+  />
+
+  <!-- ── Depth vignette on body ────────────────────────────────────────────── -->
+  <path
+    d="M8 48 L92 48 L92 84 Q92 92 84 92 L16 92 Q8 92 8 84 Z"
+    fill="url(#depth)"
+  />
+
+  <!-- ── Seam shadow just below the tab line ──────────────────────────────── -->
+  <rect x="8" y="48" width="84" height="6" fill="url(#seamShadow)"/>
+
+  <!-- ── Seam highlight (thin bright line between tab and body) ───────────── -->
+  <line x1="8" y1="48" x2="92" y2="48"
+        stroke="white" stroke-opacity="0.22" stroke-width="1.2"/>
+
+  <!-- ── Left-edge specular ───────────────────────────────────────────────── -->
+  <path d="M8 48 L8 84 Q8 90 11 92"
+        stroke="white" stroke-opacity="0.14" stroke-width="1"/>
+
+</svg>

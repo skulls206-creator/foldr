@@ -1,0 +1,680 @@
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..700&family=Onest:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+@import "tw-animate-css";
+@plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-card-border: hsl(var(--card-border));
+
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-popover-border: hsl(var(--popover-border));
+
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-primary-border: var(--primary-border);
+
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-secondary-border: var(--secondary-border);
+
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-muted-border: var(--muted-border);
+
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-accent-border: var(--accent-border);
+
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-destructive-border: var(--destructive-border);
+
+  --color-sidebar: hsl(var(--sidebar));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-border: hsl(var(--sidebar-border));
+  --color-sidebar-primary: hsl(var(--sidebar-primary));
+  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
+  --color-sidebar-primary-border: var(--sidebar-primary-border);
+  --color-sidebar-accent: hsl(var(--sidebar-accent));
+  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+  --color-sidebar-accent-border: var(--sidebar-accent-border);
+  --color-sidebar-ring: hsl(var(--sidebar-ring));
+
+  --font-sans: 'Onest', sans-serif;
+  --font-display: 'Bricolage Grotesque', sans-serif;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  /* Enforce Dark Mode Colors universally for this sleek storage app */
+  --background: 240 10% 4%;
+  --foreground: 0 0% 98%;
+  --border: 240 5% 15%;
+  --input: 240 5% 15%;
+  --ring: 190 90% 50%; /* Electric Cyan */
+  
+  --card: 240 10% 6%;
+  --card-foreground: 0 0% 98%;
+  --card-border: 240 5% 15%;
+  
+  --popover: 240 10% 6%;
+  --popover-foreground: 0 0% 98%;
+  --popover-border: 240 5% 15%;
+  
+  --primary: 190 90% 50%;
+  --primary-foreground: 240 10% 4%;
+  --primary-border: 190 90% 40%;
+  
+  --secondary: 240 5% 12%;
+  --secondary-foreground: 0 0% 98%;
+  --secondary-border: 240 5% 18%;
+  
+  --muted: 240 5% 12%;
+  --muted-foreground: 240 5% 65%;
+  --muted-border: 240 5% 15%;
+  
+  --accent: 260 80% 60%; /* Deep Indigo Accent for encrypted items */
+  --accent-foreground: 0 0% 100%;
+  --accent-border: 260 80% 50%;
+  
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+  --destructive-border: 0 84% 50%;
+  
+  --sidebar: 240 10% 4%;
+  --sidebar-foreground: 240 5% 65%;
+  --sidebar-border: 240 5% 10%;
+  --sidebar-primary: 190 90% 50%;
+  --sidebar-primary-foreground: 240 10% 4%;
+  --sidebar-accent: 240 5% 10%;
+  --sidebar-accent-foreground: 0 0% 98%;
+  --sidebar-ring: 190 90% 50%;
+
+  --radius: 0.75rem;
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+
+  --elevate-1: rgba(255, 255, 255, 0.05);
+  --elevate-2: rgba(255, 255, 255, 0.1);
+}
+
+.dark {
+  /* Identical to :root to force dark mode look */
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+    color-scheme: dark;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    @apply font-semibold tracking-tight;
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    @apply bg-card/60 backdrop-blur-xl border border-white/5 shadow-2xl;
+  }
+  
+  .glass-panel-accent {
+    @apply bg-accent/10 backdrop-blur-xl border border-accent/20 shadow-2xl shadow-accent/5;
+  }
+
+  /* Custom Scrollbar for sleek dark UI */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-white/10 rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-white/20;
+  }
+}
+
+/* ─── Windows Theme ──────────────────────────────────────────────────────── */
+/* Applied via .theme-windows on <html> when the user picks the Windows look  */
+
+.theme-windows {
+  /* Windows 11 File Explorer dark palette */
+  --background: 0 0% 13%;          /* #212121 */
+  --foreground: 0 0% 95%;
+  --border: 0 0% 22%;
+  --input: 0 0% 19%;
+  --ring: 209 100% 41%;            /* Windows Blue #0078d4 */
+
+  --card: 0 0% 16%;                /* #282828 */
+  --card-foreground: 0 0% 95%;
+  --card-border: 0 0% 22%;
+
+  --popover: 0 0% 17%;
+  --popover-foreground: 0 0% 95%;
+  --popover-border: 0 0% 24%;
+
+  --primary: 209 100% 41%;         /* Windows Blue */
+  --primary-foreground: 0 0% 100%;
+  --primary-border: 209 100% 35%;
+
+  --secondary: 0 0% 20%;
+  --secondary-foreground: 0 0% 95%;
+  --secondary-border: 0 0% 26%;
+
+  --muted: 0 0% 19%;
+  --muted-foreground: 0 0% 60%;
+  --muted-border: 0 0% 22%;
+
+  --accent: 209 100% 41%;          /* Blue for accent too */
+  --accent-foreground: 0 0% 100%;
+  --accent-border: 209 100% 35%;
+
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+  --destructive-border: 0 84% 50%;
+
+  --sidebar: 0 0% 12%;             /* slightly darker sidebar */
+  --sidebar-foreground: 0 0% 72%;
+  --sidebar-border: 0 0% 18%;
+  --sidebar-primary: 209 100% 41%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 0 0% 18%;
+  --sidebar-accent-foreground: 0 0% 95%;
+  --sidebar-ring: 209 100% 41%;
+
+  --radius: 0.25rem;               /* boxy Windows corners */
+}
+
+/* Font: switch to system Segoe UI stack in Windows theme */
+.theme-windows body,
+.theme-windows button,
+.theme-windows input,
+.theme-windows select,
+.theme-windows textarea {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+.theme-windows h1,
+.theme-windows h2,
+.theme-windows h3,
+.theme-windows h4,
+.theme-windows h5,
+.theme-windows h6 {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  letter-spacing: -0.01em;
+}
+
+/* Glass panel becomes a solid Windows-style surface */
+.theme-windows .glass-panel {
+  background: hsl(0 0% 16% / 0.98);
+  backdrop-filter: none;
+  border: 1px solid hsl(0 0% 24%);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* Scrollbar — wider, more Windows-like */
+.theme-windows ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.theme-windows ::-webkit-scrollbar-track {
+  background: hsl(0 0% 14%);
+}
+.theme-windows ::-webkit-scrollbar-thumb {
+  background: hsl(0 0% 30%);
+  border-radius: 0;
+  border: 2px solid hsl(0 0% 14%);
+}
+.theme-windows ::-webkit-scrollbar-thumb:hover {
+  background: hsl(0 0% 42%);
+}
+
+/* Windows Explorer accent glow on active/hover sidebar items */
+.theme-windows [data-active="true"],
+.theme-windows [aria-current="page"] {
+  background: hsl(209 100% 41% / 0.18) !important;
+  color: hsl(209 100% 72%) !important;
+  border-left: 2px solid hsl(209 100% 55%) !important;
+}
+
+/* Upload button pill → Windows rectangular button */
+.theme-windows .rounded-full {
+  border-radius: 0.25rem;
+}
+/* ──────────────────────────────────────────────────────────────────────────── */
+
+/* ─── KHURK OS Theme ─────────────────────────────────────────────────────── */
+/* Applied via .theme-khurk on <html> when embedded inside KHURK OS           */
+
+:root {
+  --khurk-accent: #5865F2; /* default Discord-purple; overridden via postMessage */
+}
+
+.theme-khurk {
+  /* Near-black shell background to blend into KHURK OS */
+  --background: 228 20% 6%;           /* #0b0d14 */
+  --foreground: 228 15% 93%;
+
+  --border: 228 18% 14%;
+  --input: 228 18% 11%;
+  --ring: 235 86% 65%;                /* KHURK purple */
+
+  --card: 228 20% 9%;
+  --card-foreground: 228 15% 93%;
+  --card-border: 228 18% 14%;
+
+  --popover: 228 20% 10%;
+  --popover-foreground: 228 15% 93%;
+  --popover-border: 228 18% 16%;
+
+  --primary: 235 86% 65%;             /* #5865F2 KHURK accent */
+  --primary-foreground: 0 0% 100%;
+  --primary-border: 235 86% 55%;
+
+  --secondary: 228 18% 14%;
+  --secondary-foreground: 228 15% 80%;
+
+  --muted: 228 18% 12%;
+  --muted-foreground: 228 12% 55%;
+
+  --accent: 235 86% 65%;
+  --accent-foreground: 0 0% 100%;
+  --accent-border: 235 86% 55%;
+
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+  --destructive-border: 0 84% 50%;
+
+  --sidebar: 228 22% 5%;
+  --sidebar-foreground: 228 12% 65%;
+  --sidebar-border: 228 18% 11%;
+  --sidebar-primary: 235 86% 65%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 228 18% 10%;
+  --sidebar-accent-foreground: 228 15% 90%;
+  --sidebar-ring: 235 86% 65%;
+
+  --radius: 0.5rem;
+}
+
+/* Active sidebar item gets KHURK accent treatment */
+.theme-khurk [data-active="true"],
+.theme-khurk [aria-current="page"] {
+  background: hsl(235 86% 65% / 0.15) !important;
+  color: hsl(235 86% 78%) !important;
+}
+/* ──────────────────────────────────────────────────────────────────────────── */
+
+/* ─── Cyberpunk Theme ─────────────────────────────────────────────────────── */
+.theme-cyberpunk {
+  --background: 270 25% 7%;           /* #0d0a14 deep purple-black */
+  --foreground: 280 10% 93%;
+
+  --border: 280 20% 16%;
+  --input: 270 22% 12%;
+  --ring: 330 100% 58%;               /* hot pink */
+
+  --card: 270 22% 10%;
+  --card-foreground: 280 10% 93%;
+  --card-border: 280 20% 16%;
+
+  --popover: 270 24% 11%;
+  --popover-foreground: 280 10% 93%;
+  --popover-border: 280 20% 18%;
+
+  --primary: 330 100% 58%;            /* #ff2d78 neon pink */
+  --primary-foreground: 0 0% 100%;
+  --primary-border: 330 100% 48%;
+
+  --secondary: 270 20% 16%;
+  --secondary-foreground: 280 10% 85%;
+  --secondary-border: 280 18% 20%;
+
+  --muted: 270 20% 13%;
+  --muted-foreground: 280 10% 52%;
+  --muted-border: 280 18% 17%;
+
+  --accent: 330 100% 58%;
+  --accent-foreground: 0 0% 100%;
+  --accent-border: 330 100% 48%;
+
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+  --destructive-border: 0 84% 50%;
+
+  --sidebar: 270 28% 5%;
+  --sidebar-foreground: 280 10% 62%;
+  --sidebar-border: 280 20% 12%;
+  --sidebar-primary: 330 100% 58%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 270 22% 11%;
+  --sidebar-accent-foreground: 280 10% 88%;
+  --sidebar-ring: 330 100% 58%;
+
+  --radius: 0.5rem;
+}
+
+.theme-cyberpunk [data-active="true"],
+.theme-cyberpunk [aria-current="page"] {
+  background: hsl(330 100% 58% / 0.12) !important;
+  color: hsl(330 100% 75%) !important;
+  border-left: 2px solid hsl(330 100% 58%) !important;
+}
+/* ──────────────────────────────────────────────────────────────────────────── */
+
+/* ─── Forest Theme ────────────────────────────────────────────────────────── */
+.theme-forest {
+  --background: 130 20% 6%;           /* #0a0f0a deep forest black */
+  --foreground: 120 8% 92%;
+
+  --border: 130 16% 14%;
+  --input: 130 18% 10%;
+  --ring: 142 71% 45%;                /* emerald */
+
+  --card: 130 18% 8%;
+  --card-foreground: 120 8% 92%;
+  --card-border: 130 16% 14%;
+
+  --popover: 130 20% 9%;
+  --popover-foreground: 120 8% 92%;
+  --popover-border: 130 16% 16%;
+
+  --primary: 142 71% 45%;             /* #22c55e emerald green */
+  --primary-foreground: 0 0% 100%;
+  --primary-border: 142 71% 35%;
+
+  --secondary: 130 16% 13%;
+  --secondary-foreground: 120 8% 82%;
+  --secondary-border: 130 14% 18%;
+
+  --muted: 130 16% 11%;
+  --muted-foreground: 120 6% 50%;
+  --muted-border: 130 14% 15%;
+
+  --accent: 142 71% 45%;
+  --accent-foreground: 0 0% 100%;
+  --accent-border: 142 71% 35%;
+
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+  --destructive-border: 0 84% 50%;
+
+  --sidebar: 130 24% 4%;
+  --sidebar-foreground: 120 6% 60%;
+  --sidebar-border: 130 16% 10%;
+  --sidebar-primary: 142 71% 45%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 130 18% 9%;
+  --sidebar-accent-foreground: 120 8% 88%;
+  --sidebar-ring: 142 71% 45%;
+
+  --radius: 0.5rem;
+}
+
+.theme-forest [data-active="true"],
+.theme-forest [aria-current="page"] {
+  background: hsl(142 71% 45% / 0.12) !important;
+  color: hsl(142 71% 65%) !important;
+  border-left: 2px solid hsl(142 71% 45%) !important;
+}
+/* ──────────────────────────────────────────────────────────────────────────── */
+
+/* ─── Sunset Theme ────────────────────────────────────────────────────────── */
+.theme-sunset {
+  --background: 24 30% 7%;            /* #130d08 deep warm black */
+  --foreground: 30 10% 93%;
+
+  --border: 24 22% 15%;
+  --input: 24 24% 11%;
+  --ring: 25 95% 53%;                 /* orange */
+
+  --card: 24 26% 9%;
+  --card-foreground: 30 10% 93%;
+  --card-border: 24 22% 15%;
+
+  --popover: 24 28% 10%;
+  --popover-foreground: 30 10% 93%;
+  --popover-border: 24 22% 17%;
+
+  --primary: 25 95% 53%;              /* #f97316 warm orange */
+  --primary-foreground: 0 0% 100%;
+  --primary-border: 25 95% 43%;
+
+  --secondary: 24 22% 14%;
+  --secondary-foreground: 30 10% 83%;
+  --secondary-border: 24 20% 19%;
+
+  --muted: 24 22% 12%;
+  --muted-foreground: 30 8% 52%;
+  --muted-border: 24 20% 16%;
+
+  --accent: 38 92% 50%;               /* amber accent */
+  --accent-foreground: 0 0% 100%;
+  --accent-border: 38 92% 40%;
+
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+  --destructive-border: 0 84% 50%;
+
+  --sidebar: 24 32% 5%;
+  --sidebar-foreground: 30 8% 62%;
+  --sidebar-border: 24 22% 11%;
+  --sidebar-primary: 25 95% 53%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 24 26% 10%;
+  --sidebar-accent-foreground: 30 10% 88%;
+  --sidebar-ring: 25 95% 53%;
+
+  --radius: 0.625rem;
+}
+
+.theme-sunset [data-active="true"],
+.theme-sunset [aria-current="page"] {
+  background: hsl(25 95% 53% / 0.12) !important;
+  color: hsl(25 95% 72%) !important;
+  border-left: 2px solid hsl(25 95% 53%) !important;
+}
+/* ──────────────────────────────────────────────────────────────────────────── */
+
+/* ─── Ocean Theme ─────────────────────────────────────────────────────────── */
+.theme-ocean {
+  --background: 218 38% 7%;           /* #070d1a deep navy */
+  --foreground: 210 12% 92%;
+
+  --border: 218 28% 15%;
+  --input: 218 30% 11%;
+  --ring: 192 91% 42%;                /* teal/cyan */
+
+  --card: 218 32% 9%;
+  --card-foreground: 210 12% 92%;
+  --card-border: 218 28% 15%;
+
+  --popover: 218 34% 10%;
+  --popover-foreground: 210 12% 92%;
+  --popover-border: 218 28% 17%;
+
+  --primary: 192 91% 42%;             /* #06b6d4 ocean teal */
+  --primary-foreground: 0 0% 100%;
+  --primary-border: 192 91% 32%;
+
+  --secondary: 218 28% 14%;
+  --secondary-foreground: 210 12% 82%;
+  --secondary-border: 218 26% 19%;
+
+  --muted: 218 28% 12%;
+  --muted-foreground: 210 10% 52%;
+  --muted-border: 218 26% 16%;
+
+  --accent: 199 89% 48%;              /* sky blue accent */
+  --accent-foreground: 0 0% 100%;
+  --accent-border: 199 89% 38%;
+
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+  --destructive-border: 0 84% 50%;
+
+  --sidebar: 218 42% 5%;
+  --sidebar-foreground: 210 10% 62%;
+  --sidebar-border: 218 28% 11%;
+  --sidebar-primary: 192 91% 42%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 218 32% 10%;
+  --sidebar-accent-foreground: 210 12% 88%;
+  --sidebar-ring: 192 91% 42%;
+
+  --radius: 0.5rem;
+}
+
+.theme-ocean [data-active="true"],
+.theme-ocean [aria-current="page"] {
+  background: hsl(192 91% 42% / 0.12) !important;
+  color: hsl(192 91% 65%) !important;
+  border-left: 2px solid hsl(192 91% 42%) !important;
+}
+/* ──────────────────────────────────────────────────────────────────────────── */
+
+/* ─── Pearl Theme (warm light mode) ──────────────────────────────────────── */
+.theme-pearl {
+  --background: 36 25% 97%;           /* #f8f7f5 warm off-white */
+  --foreground: 230 15% 14%;          /* #1c1e2a charcoal */
+
+  --border: 30 12% 84%;               /* #ddd8d2 soft gray */
+  --input: 30 12% 91%;
+  --ring: 228 82% 62%;                /* slate blue #4f6ef7 */
+
+  --card: 36 20% 94%;                 /* #f0eeeb card surface */
+  --card-foreground: 230 15% 14%;
+  --card-border: 30 12% 86%;
+
+  --popover: 36 22% 96%;
+  --popover-foreground: 230 15% 14%;
+  --popover-border: 30 12% 84%;
+
+  --primary: 228 82% 62%;             /* #4f6ef7 slate blue */
+  --primary-foreground: 0 0% 100%;
+  --primary-border: 228 82% 52%;
+
+  --secondary: 30 10% 88%;
+  --secondary-foreground: 230 15% 25%;
+  --secondary-border: 30 10% 80%;
+
+  --muted: 30 10% 90%;
+  --muted-foreground: 230 10% 48%;
+  --muted-border: 30 10% 84%;
+
+  --accent: 228 82% 62%;
+  --accent-foreground: 0 0% 100%;
+  --accent-border: 228 82% 52%;
+
+  --destructive: 0 76% 52%;
+  --destructive-foreground: 0 0% 100%;
+  --destructive-border: 0 76% 42%;
+
+  --sidebar: 36 20% 91%;              /* #ebe8e4 slightly darker sidebar */
+  --sidebar-foreground: 230 12% 35%;
+  --sidebar-border: 30 12% 82%;
+  --sidebar-primary: 228 82% 62%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 30 10% 86%;
+  --sidebar-accent-foreground: 230 15% 14%;
+  --sidebar-ring: 228 82% 62%;
+
+  --radius: 0.5rem;
+}
+
+/* Light surfaces — override transparent white classes */
+.theme-pearl body {
+  color-scheme: light;
+}
+
+.theme-pearl [data-active="true"],
+.theme-pearl [aria-current="page"] {
+  background: hsl(228 82% 62% / 0.10) !important;
+  color: hsl(228 82% 45%) !important;
+  border-left: 2px solid hsl(228 82% 62%) !important;
+}
+/* ──────────────────────────────────────────────────────────────────────────── */
+
+/* ─── Crimson Theme ───────────────────────────────────────────────────────── */
+.theme-crimson {
+  --background: 350 38% 5%;           /* #100608 near-black with red tint */
+  --foreground: 10 18% 92%;           /* #f0e8e9 warm light */
+
+  --border: 350 32% 14%;              /* #2e1018 dark burgundy border */
+  --input: 350 34% 10%;
+  --ring: 348 78% 49%;                /* #dc1a3c crimson */
+
+  --card: 350 36% 7%;                 /* #1a0609 deep card */
+  --card-foreground: 10 18% 92%;
+  --card-border: 350 32% 14%;
+
+  --popover: 350 36% 8%;
+  --popover-foreground: 10 18% 92%;
+  --popover-border: 350 32% 15%;
+
+  --primary: 348 78% 49%;             /* #dc1a3c crimson */
+  --primary-foreground: 0 0% 100%;
+  --primary-border: 348 78% 39%;
+
+  --secondary: 350 30% 13%;
+  --secondary-foreground: 10 14% 82%;
+  --secondary-border: 350 28% 18%;
+
+  --muted: 350 30% 11%;
+  --muted-foreground: 10 10% 52%;
+  --muted-border: 350 28% 15%;
+
+  --accent: 348 78% 49%;
+  --accent-foreground: 0 0% 100%;
+  --accent-border: 348 78% 39%;
+
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+  --destructive-border: 0 84% 50%;
+
+  --sidebar: 350 42% 4%;              /* #0d0507 deepest sidebar */
+  --sidebar-foreground: 10 12% 60%;
+  --sidebar-border: 350 32% 10%;
+  --sidebar-primary: 348 78% 49%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 350 34% 8%;
+  --sidebar-accent-foreground: 10 18% 88%;
+  --sidebar-ring: 348 78% 49%;
+
+  --radius: 0.5rem;
+}
+
+.theme-crimson [data-active="true"],
+.theme-crimson [aria-current="page"] {
+  background: hsl(348 78% 49% / 0.14) !important;
+  color: hsl(348 78% 70%) !important;
+  border-left: 2px solid hsl(348 78% 49%) !important;
+}
+/* ──────────────────────────────────────────────────────────────────────────── */
