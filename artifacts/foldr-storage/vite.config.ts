@@ -5,25 +5,26 @@ import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 import { VitePWA } from "vite-plugin-pwa";
 
-const rawPort = process.env.PORT;
+const isStaticBuild = process.env.STATIC_BUILD === "true";
 
-if (!rawPort) {
-  throw new Error(
-    "PORT environment variable is required but was not provided.",
-  );
+let port: number | undefined;
+if (!isStaticBuild) {
+  const rawPort = process.env.PORT;
+  if (!rawPort) {
+    throw new Error(
+      "PORT environment variable is required for dev/preview servers.",
+    );
+  }
+  port = Number(rawPort);
+  if (Number.isNaN(port) || port <= 0) {
+    throw new Error(`Invalid PORT value: "${rawPort}"`);
+  }
 }
 
-const port = Number(rawPort);
-
-if (Number.isNaN(port) || port <= 0) {
-  throw new Error(`Invalid PORT value: "${rawPort}"`);
-}
-
-const basePath = process.env.BASE_PATH;
-
+const basePath = process.env.BASE_PATH || (isStaticBuild ? "/" : undefined);
 if (!basePath) {
   throw new Error(
-    "BASE_PATH environment variable is required but was not provided.",
+    "BASE_PATH environment variable is required.",
   );
 }
 
@@ -74,11 +75,14 @@ export default defineConfig({
   },
   root: path.resolve(import.meta.dirname),
   build: {
-    outDir: path.resolve(import.meta.dirname, "dist/public"),
+    outDir: path.resolve(
+      import.meta.dirname,
+      isStaticBuild ? "dist" : "dist/public",
+    ),
     emptyOutDir: true,
   },
   server: {
-    port,
+    port: port || 3000,
     host: "0.0.0.0",
     allowedHosts: true,
     fs: {
@@ -87,7 +91,7 @@ export default defineConfig({
     },
   },
   preview: {
-    port,
+    port: port || 3000,
     host: "0.0.0.0",
     allowedHosts: true,
   },

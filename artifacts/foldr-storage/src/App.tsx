@@ -4,13 +4,20 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/contexts/theme-context";
 import { FolderSyncProvider } from "@/contexts/folder-sync-context";
-import { setAuthTokenGetter } from "@workspace/api-client-react";
+import { setBaseUrl, setAuthTokenGetter } from "@workspace/api-client-react";
 
 // Register the localStorage bearer-token getter once at module load.
 // In normal browser sessions the cookie handles auth, but inside cross-site
 // iframes (e.g. KHURK OS) third-party cookies are blocked — the getter makes
 // every customFetch call attach Authorization: Bearer <token> as a fallback.
 setAuthTokenGetter(() => localStorage.getItem("foldr-auth-token"));
+
+// When deployed statically (GH Pages, etc.) API calls need to go to the live
+// Replit backend.  On Replit itself the frontend and API share an origin so
+// relative paths work fine.
+if (import.meta.env.VITE_API_URL) {
+  setBaseUrl(import.meta.env.VITE_API_URL);
+}
 
 // Pages
 import Dashboard from "@/pages/dashboard";
