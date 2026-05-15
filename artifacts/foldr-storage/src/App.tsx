@@ -1,4 +1,5 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
+import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -40,6 +41,22 @@ const queryClient = new QueryClient({
 });
 
 function Router() {
+  // SPA redirect handler for GH Pages (reads from 404.html)
+  const [, setLocation] = useLocation();
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem("redirect");
+      if (stored) {
+        sessionStorage.removeItem("redirect");
+        // Only redirect if it's not the root path (avoids loops)
+        const target = stored.replace(/\/$/, "") || "/";
+        if (target !== window.location.pathname.replace(/\/$/, "")) {
+          setLocation(target);
+        }
+      }
+    } catch {}
+  }, []);
+
   return (
     <Switch>
       <Route path="/" component={Dashboard} />
