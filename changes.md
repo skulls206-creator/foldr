@@ -4,6 +4,20 @@
 
 ## Unreleased / In Development
 
+### Mobile Layout Overhaul — Windows Explorer-Style Spacing
+- Bumped all row density modes with mobile-first padding (comfortable: `py-3 sm:py-2 px-4`, cozy: `py-2 sm:py-1 px-4`, compact: `py-1 sm:py-0.5 px-4`)
+- List items now show date + size subtitle below filename on mobile (since right-side columns are hidden)
+- Removed `max-w-7xl` constraint on main content for full-width file explorer feel
+- Grid cards: increased mobile padding `p-6 sm:p-5`, folder icon wrappers now `p-5 sm:p-4`
+- Grid gaps: `gap-5 sm:gap-6`, section spacing: `space-y-6 sm:space-y-8`
+- List header padding bumped to `px-4 py-3 sm:px-4 sm:py-2.5`
+- App main padding: `p-5 sm:p-6 lg:p-8`
+
+### GitHub Pages Deployment Fix
+- Switched Pages source from "legacy" (branch) to "GitHub Actions" (workflow) mode via API
+- Fixed `artifacts/foldr-storage/public/CNAME` — was `khurk.xyz`, corrected to `foldr.khurk.xyz` to match DNS
+- Root CNAME already had correct `foldr.khurk.xyz`
+
 ### Security Audit — API Auth & Short-Lived Downloads
 - Verified all `/api/files`, `/api/folders`, `/api/activity` routes are gated by `requireAuth` middleware — confirmed via `curl` that unauthenticated requests return 401
 - Verified share routes (`/api/share/:token`, `/api/shared-folder/:token`) validate tokens server-side with expiry + max-view checks via `resolveShareLink`
