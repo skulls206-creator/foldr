@@ -74,6 +74,7 @@ import {
 import { UploadModal } from "@/components/files/upload-modal";
 import { UploadCloud, FolderPlus } from "lucide-react";
 import { useRowDensity } from "@/hooks/use-row-density";
+import { apiUrl } from "@/lib/utils";
 
 type SortBy = "name" | "size" | "date";
 type SortOrder = "asc" | "desc";
@@ -308,7 +309,7 @@ export default function Dashboard() {
   const handleBulkDownload = () => {
     selectedFilesData.forEach(file => {
       const a = document.createElement("a");
-      a.href = `/api/files/${file.id}/download`;
+      a.href = `${apiUrl()}/api/files/${file.id}/download`;
       a.download = file.name;
       a.target = "_blank";
       document.body.appendChild(a);
@@ -320,7 +321,7 @@ export default function Dashboard() {
 
   const handleOpenAll = () => {
     selectedFilesData.forEach(file => {
-      window.open(`/api/files/${file.id}/download`, "_blank");
+      window.open(`${apiUrl()}/api/files/${file.id}/download`, "_blank");
     });
     toast({ title: `Opened ${selectedFilesData.length} file${selectedFilesData.length > 1 ? "s" : ""} in new tabs` });
   };

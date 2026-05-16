@@ -1,4 +1,4 @@
-import { formatBytes } from "@/lib/utils";
+import { formatBytes, apiUrl } from "@/lib/utils";
 import { format } from "date-fns";
 import { Lock, MoreHorizontal } from "lucide-react";
 import { FileIconDisplay } from "./file-icon";
@@ -58,7 +58,7 @@ export function FileListItem({
   const dc = getDensityClasses(density);
   
   const handleDownload = () => {
-    window.open(`${import.meta.env.BASE_URL}api/files/${file.id}/download`, '_blank');
+    window.open(`${apiUrl()}/api/files/${file.id}/download`, '_blank');
   };
 
   const handleRowClick = () => {

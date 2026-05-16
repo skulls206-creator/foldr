@@ -30,6 +30,13 @@ export function setBaseUrl(url: string | null): void {
 }
 
 /**
+ * Get the configured base URL (null if none set).
+ */
+export function getBaseUrl(): string | null {
+  return _baseUrl;
+}
+
+/**
  * Register a getter that supplies a bearer auth token.  Before every fetch
  * the getter is invoked; when it returns a non-null string, an
  * `Authorization: Bearer <token>` header is attached to the request.
@@ -357,7 +364,12 @@ export async function customFetch<T = unknown>(
 
   const requestInfo = { method, url: resolveUrl(input) };
 
-  const response = await fetch(input, { ...init, method, headers });
+  const response = await fetch(input, {
+    ...init,
+    method,
+    headers,
+    credentials: _baseUrl ? "include" : (init.credentials ?? "same-origin"),
+  });
 
   if (!response.ok) {
     const errorData = await parseErrorBody(response, method);

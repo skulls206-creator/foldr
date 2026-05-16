@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useFileVersions, useRestoreFileVersion } from "@workspace/api-client-react";
 import type { File } from "@workspace/api-client-react";
-import { formatBytes } from "@/lib/utils";
+import { formatBytes, apiUrl } from "@/lib/utils";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 
@@ -110,7 +110,7 @@ export function PreviewPanel({ file, onClose }: PreviewPanelProps) {
   if (!file) return null;
 
   const cat = getMimeCategory(file.mimeType);
-  const downloadUrl = `${import.meta.env.BASE_URL}api/files/${file.id}/download`;
+  const downloadUrl = `${apiUrl()}/api/files/${file.id}/download`;
 
   return (
     <div className="w-80 flex-shrink-0 bg-card/40 border-l border-white/5 flex flex-col h-full">

@@ -16,6 +16,7 @@ const ALLOWED_ORIGINS = new Set([
   "https://skulls206-creator.github.io",
   "https://khurk.xyz",
   "https://www.khurk.xyz",
+  "https://foldr.khurk.xyz",
 ]);
 
 app.use(

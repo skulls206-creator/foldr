@@ -1,4 +1,4 @@
-import { formatBytes } from "@/lib/utils";
+import { formatBytes, apiUrl } from "@/lib/utils";
 import { format } from "date-fns";
 import { Lock, HardDrive, MoreVertical, Star } from "lucide-react";
 import { FileIconDisplay } from "./file-icon";
@@ -37,7 +37,7 @@ export function FileCard({
 }: FileCardProps) {
   
   const handleDownload = () => {
-    window.open(`/api/files/${file.id}/download`, '_blank');
+    window.open(`${apiUrl()}/api/files/${file.id}/download`, '_blank');
   };
 
   const handleCardClick = () => {

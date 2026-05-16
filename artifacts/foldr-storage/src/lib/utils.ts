@@ -5,6 +5,16 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/**
+ * Return the API base URL (empty string for same-origin requests).
+ * On GitHub Pages this is `https://foldr.khurk.services`.
+ */
+export function apiUrl(): string {
+  return (typeof import.meta !== "undefined" &&
+    (import.meta.env.VITE_API_URL as string | undefined)) ??
+    "";
+}
+
 export function formatBytes(bytes: number, decimals = 2) {
   if (!+bytes) return "0 Bytes";
 

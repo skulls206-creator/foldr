@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { getListFilesQueryKey } from "@workspace/api-client-react";
+import { getListFilesQueryKey, getBaseUrl } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 
 export function useUploadWithProgress() {
@@ -20,7 +20,8 @@ export function useUploadWithProgress() {
 
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
-      xhr.open("POST", "/api/files/upload");
+      const apiUrl = getBaseUrl() || "";
+      xhr.open("POST", `${apiUrl}/api/files/upload`);
       xhr.withCredentials = true;
 
       xhr.upload.onprogress = (e) => {

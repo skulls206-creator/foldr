@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { customFetch } from "./custom-fetch";
+import { customFetch, getBaseUrl } from "./custom-fetch";
 import type { File, Folder, FolderListResponse } from "./generated/api.schemas";
 
 export interface StorageUsage {
@@ -335,7 +335,7 @@ export function useRestoreFileVersion() {
 export function useBulkDownloadFiles() {
   return useMutation({
     mutationFn: async ({ ids }: { ids: string[] }) => {
-      const resp = await fetch("/api/files/bulk-download", {
+      const resp = await fetch(`${getBaseUrl() || ""}/api/files/bulk-download`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
