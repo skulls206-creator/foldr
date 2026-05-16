@@ -117,9 +117,9 @@ export function FileListItem({
           </div>
         )}
 
-        {/* Icon — slightly larger on comfortable density */}
-        <div className={`relative ${density === "comfortable" ? "p-2 sm:p-1.5" : dc.iconWrap} rounded-md bg-white/5 flex-shrink-0`}>
-          <FileIconDisplay mimeType={file.mimeType} className={density === "comfortable" ? "w-5 h-5 sm:w-4 sm:h-4" : dc.iconSize} />
+        {/* Icon */}
+        <div className={`relative ${dc.iconWrap} rounded-md bg-white/5 flex-shrink-0`}>
+          <FileIconDisplay mimeType={file.mimeType} className={dc.iconSize} />
           {file.isEncrypted && (
             <div className="absolute -bottom-0.5 -right-0.5 bg-accent p-0.5 rounded-full border border-background">
               <Lock className="w-2 h-2 text-white" />
@@ -138,7 +138,7 @@ export function FileListItem({
       </div>
 
       {/* Right fixed columns */}
-      <div className="flex items-center pl-4 flex-shrink-0">
+      <div className="flex items-center flex-shrink-0">
         <div className="w-20 text-right hidden sm:block">
           <span className="text-xs text-muted-foreground/70">{formatBytes(file.size)}</span>
         </div>

@@ -53,8 +53,8 @@ export function getDensityClasses(density: RowDensity): DensityClasses {
       return {
         rowPy: "py-3 sm:py-2 px-3 sm:px-4",
         iconSize: "w-4 h-4",
-        iconWrap: "p-1.5",
-        gap: "gap-3 sm:gap-3",
+        iconWrap: "p-1 sm:p-1.5",
+        gap: "gap-2 sm:gap-3",
       };
   }
 }

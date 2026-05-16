@@ -88,8 +88,8 @@ export function FolderRow({ folder, isSelected, isSelecting, density = "comforta
         </div>
 
         {/* Folder icon */}
-        <div className={`flex-shrink-0 ${density === "comfortable" ? "p-2 sm:p-1.5" : dc.iconWrap} rounded-md bg-yellow-500/10`}>
-          <FolderOpen className={`${density === "comfortable" ? "w-5 h-5 sm:w-4 sm:h-4" : dc.iconSize} text-yellow-400`} />
+        <div className={`flex-shrink-0 ${dc.iconWrap} rounded-md bg-yellow-500/10`}>
+          <FolderOpen className={`${dc.iconSize} text-yellow-400`} />
         </div>
 
         {/* Name + mobile subtitle */}
@@ -102,7 +102,7 @@ export function FolderRow({ folder, isSelected, isSelecting, density = "comforta
       </div>
 
       {/* RIGHT: fixed columns matching FileListItem */}
-      <div className="flex items-center pl-4 flex-shrink-0">
+      <div className="flex items-center flex-shrink-0">
         <div className="w-20 text-right hidden sm:block">
           <span className="text-xs text-muted-foreground/70">{formatBytes(totalSize)}</span>
         </div>
