@@ -51,7 +51,7 @@ export function getDensityClasses(density: RowDensity): DensityClasses {
       };
     default: // comfortable
       return {
-        rowPy: "py-3 sm:py-2 px-4 sm:px-4",
+        rowPy: "py-3 sm:py-2 px-3 sm:px-4",
         iconSize: "w-4 h-4",
         iconWrap: "p-1.5",
         gap: "gap-3 sm:gap-3",
