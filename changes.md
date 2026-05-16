@@ -4,6 +4,11 @@
 
 ## Unreleased / In Development
 
+### Refresh Button in Context Menus
+- Added Refresh button to file/folder right-click menus, three-dot menus, and background right-click area
+- Uses `queryClient.invalidateQueries` to refresh both file and folder lists
+- Accessible via right-click on any file, folder, or empty area of the dashboard
+
 ### Mobile Layout Overhaul — Windows Explorer-Style Spacing
 - Bumped all row density modes with mobile-first padding (comfortable: `py-3 sm:py-2 px-4`, cozy: `py-2 sm:py-1 px-4`, compact: `py-1 sm:py-0.5 px-4`)
 - List items now show date + size subtitle below filename on mobile (since right-side columns are hidden)
