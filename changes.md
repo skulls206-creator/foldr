@@ -1,5 +1,7 @@
 # FOLDR — Changelog
 
+> Also see `AGENTS.md` for how both AI agents collaborate on this project.
+
 ## Unreleased / In Development
 
 ### Security Audit — API Auth & Short-Lived Downloads
