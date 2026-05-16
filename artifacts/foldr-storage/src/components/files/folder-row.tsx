@@ -1,4 +1,4 @@
-import { FolderOpen, MoreHorizontal, Trash2, ChevronRight, Pencil, Share2 } from "lucide-react";
+import { FolderOpen, MoreHorizontal, Trash2, ChevronRight, Pencil, Share2, RotateCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
@@ -31,10 +31,11 @@ interface FolderRowProps {
   onDelete: (folder: Folder) => void;
   onRename?: (folder: Folder) => void;
   onShare?: (folder: Folder) => void;
+  onRefresh?: () => void;
   onDrop?: (targetFolderId: string, fileId: string) => void;
 }
 
-export function FolderRow({ folder, isSelected, isSelecting, density = "comfortable", onSelect, onClick, onDelete, onRename, onShare, onDrop }: FolderRowProps) {
+export function FolderRow({ folder, isSelected, isSelecting, density = "comfortable", onSelect, onClick, onDelete, onRename, onShare, onRefresh, onDrop }: FolderRowProps) {
   const totalSize = (folder as any).totalSize ?? 0;
   const dc = getDensityClasses(density);
 
@@ -179,6 +180,20 @@ export function FolderRow({ folder, isSelected, isSelecting, density = "comforta
           </ContextMenuItem>
         )}
         <ContextMenuSeparator className="bg-white/8" />
+        {onRefresh && (
+          <ContextMenuItem onClick={onRefresh} className="gap-2 cursor-pointer">
+            <RotateCw className="w-4 h-4" /> Refresh
+          </ContextMenuItem>
+        )}
+        {onRefresh && (
+          <>
+            <ContextMenuSeparator className="bg-white/8" />
+            <ContextMenuItem onClick={onRefresh} className="gap-2 cursor-pointer">
+              <RotateCw className="w-4 h-4" /> Refresh
+            </ContextMenuItem>
+          </>
+        )}
+        <ContextMenuSeparator className="bg-white/8" />
         <ContextMenuItem
           onClick={() => onDelete(folder)}
           className="gap-2 cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
@@ -200,10 +215,11 @@ interface FolderCardProps {
   onDelete: (folder: Folder) => void;
   onRename?: (folder: Folder) => void;
   onShare?: (folder: Folder) => void;
+  onRefresh?: () => void;
   onDrop?: (targetFolderId: string, fileId: string) => void;
 }
 
-export function FolderCard({ folder, isSelected, isSelecting, onSelect, onClick, onDelete, onRename, onShare, onDrop }: FolderCardProps) {
+export function FolderCard({ folder, isSelected, isSelecting, onSelect, onClick, onDelete, onRename, onShare, onRefresh, onDrop }: FolderCardProps) {
   const totalSize = (folder as any).totalSize ?? 0;
 
   const handleDragOver = (e: React.DragEvent) => {

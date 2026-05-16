@@ -30,6 +30,7 @@ interface FileListItemProps {
   onSelect?: (id: string, selected: boolean) => void;
   onPreview?: (file: File) => void;
   onRename?: (file: File) => void;
+  onRefresh?: () => void;
   onShareLink: (file: File) => void;
   onShareEncrypted: (file: File) => void;
   onRevokeAccess: (file: File) => void;
@@ -46,6 +47,7 @@ export function FileListItem({
   onSelect,
   onPreview,
   onRename,
+  onRefresh,
   onShareLink,
   onShareEncrypted,
   onRevokeAccess,
@@ -83,6 +85,7 @@ export function FileListItem({
       onDownload={handleDownload}
       onPreview={onPreview ? () => onPreview(file) : undefined}
       onRename={onRename ? () => onRename(file) : undefined}
+      onRefresh={onRefresh}
       onShareLink={() => onShareLink(file)}
       onShareEncrypted={() => onShareEncrypted(file)}
       onRevokeAccess={() => onRevokeAccess(file)}
@@ -157,6 +160,7 @@ export function FileListItem({
               onDownload={handleDownload}
               onPreview={onPreview ? () => onPreview(file) : undefined}
               onRename={onRename ? () => onRename(file) : undefined}
+              onRefresh={onRefresh}
               onShareLink={() => onShareLink(file)}
               onShareEncrypted={() => onShareEncrypted(file)}
               onRevokeAccess={() => onRevokeAccess(file)}

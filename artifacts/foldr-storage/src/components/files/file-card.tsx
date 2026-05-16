@@ -13,6 +13,7 @@ interface FileCardProps {
   isSelected?: boolean;
   isSelecting?: boolean;
   onSelect?: (id: string, selected: boolean) => void;
+  onRefresh?: () => void;
   onShareLink: (file: File) => void;
   onShareEncrypted: (file: File) => void;
   onRevokeAccess: (file: File) => void;
@@ -26,6 +27,7 @@ export function FileCard({
   isSelected = false,
   isSelecting = false,
   onSelect,
+  onRefresh,
   onShareLink,
   onShareEncrypted,
   onRevokeAccess,
@@ -48,6 +50,7 @@ export function FileCard({
     <FileRightClickMenu
       file={file}
       onDownload={handleDownload}
+      onRefresh={onRefresh}
       onShareLink={() => onShareLink(file)}
       onShareEncrypted={() => onShareEncrypted(file)}
       onRevokeAccess={() => onRevokeAccess(file)}
@@ -96,6 +99,7 @@ export function FileCard({
           <FileContextMenu 
             file={file}
             onDownload={handleDownload}
+            onRefresh={onRefresh}
             onShareLink={() => onShareLink(file)}
             onShareEncrypted={() => onShareEncrypted(file)}
             onRevokeAccess={() => onRevokeAccess(file)}
