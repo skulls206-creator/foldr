@@ -41,6 +41,7 @@ import {
   ArrowUp,
   ArrowDown,
   CheckSquare2,
+  RotateCw,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -156,6 +157,12 @@ export default function Dashboard() {
   const moveFileMutation = useMoveFile();
   const createFolderShareMutation = useCreateFolderShare();
   const { toast } = useToast();
+
+  const handleRefresh = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["listFiles"] });
+    queryClient.invalidateQueries({ queryKey: ["listFolders"] });
+    toast({ title: "Refreshed" });
+  }, [queryClient, toast]);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -589,6 +596,7 @@ export default function Dashboard() {
                       onSelect={handleFolderSelect}
                       onClick={handleFolderClick}
                       onDelete={f => setFolderToDelete(f)}
+                      onRefresh={handleRefresh}
                     />
                   ))}
                 </div>
@@ -614,6 +622,7 @@ export default function Dashboard() {
                       onRevokeAccess={f => { setActiveFile(f); setIsRevokeModalOpen(true); }}
                       onTokenGate={f => { setActiveFile(f); setIsTokenGateModalOpen(true); }}
                       onDelete={f => { setActiveFile(f); setIsDeleteAlertOpen(true); }}
+                      onRefresh={handleRefresh}
                       onStar={handleStar}
                     />
                   ))}
@@ -678,6 +687,7 @@ export default function Dashboard() {
                   onDelete={f => setFolderToDelete(f)}
                   onRename={f => setRenameTarget({ id: f.id, name: f.name, kind: "folder" })}
                   onShare={handleShareFolder}
+                  onRefresh={handleRefresh}
                   onDrop={handleFileDrop}
                 />
               ))}
@@ -701,6 +711,7 @@ export default function Dashboard() {
                   onRevokeAccess={f => { setActiveFile(f); setIsRevokeModalOpen(true); }}
                   onTokenGate={f => { setActiveFile(f); setIsTokenGateModalOpen(true); }}
                   onDelete={f => { setActiveFile(f); setIsDeleteAlertOpen(true); }}
+                  onRefresh={handleRefresh}
                   onStar={handleStar}
                 />
               ))}
@@ -724,6 +735,14 @@ export default function Dashboard() {
           >
             <FolderPlus className="w-4 h-4" />
             New Folder
+          </ContextMenuItem>
+          <ContextMenuSeparator className="bg-white/8" />
+          <ContextMenuItem
+            onClick={handleRefresh}
+            className="gap-2 cursor-pointer"
+          >
+            <RotateCw className="w-4 h-4" />
+            Refresh
           </ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>

@@ -15,6 +15,7 @@ import {
   Trash2,
   Pencil,
   Eye,
+  RotateCw,
 } from "lucide-react";
 import type { File } from "@workspace/api-client-react";
 
@@ -24,6 +25,7 @@ interface FileContextMenuProps {
   onDownload: () => void;
   onPreview?: () => void;
   onRename?: () => void;
+  onRefresh?: () => void;
   onShareLink: () => void;
   onShareEncrypted: () => void;
   onRevokeAccess: () => void;
@@ -37,6 +39,7 @@ export function FileContextMenu({
   onDownload,
   onPreview,
   onRename,
+  onRefresh,
   onShareLink,
   onShareEncrypted,
   onRevokeAccess,
@@ -96,6 +99,16 @@ export function FileContextMenu({
           </>
         )}
         
+        {onRefresh && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={onRefresh} className="cursor-pointer">
+              <RotateCw className="w-4 h-4 mr-2" />
+              Refresh
+            </DropdownMenuItem>
+          </>
+        )}
+
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onDelete} className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10">
           <Trash2 className="w-4 h-4 mr-2" />

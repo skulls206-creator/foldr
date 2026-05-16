@@ -16,6 +16,7 @@ import {
   Pencil,
   Eye,
   Star,
+  RotateCw,
 } from "lucide-react";
 import type { File } from "@workspace/api-client-react";
 
@@ -25,6 +26,7 @@ interface FileRightClickMenuProps {
   onDownload: () => void;
   onPreview?: () => void;
   onRename?: () => void;
+  onRefresh?: () => void;
   onShareLink: () => void;
   onShareEncrypted: () => void;
   onRevokeAccess: () => void;
@@ -39,6 +41,7 @@ export function FileRightClickMenu({
   onDownload,
   onPreview,
   onRename,
+  onRefresh,
   onShareLink,
   onShareEncrypted,
   onRevokeAccess,
@@ -105,6 +108,15 @@ export function FileRightClickMenu({
               Revoke Access
             </ContextMenuItem>
           </>
+        )}
+
+        <ContextMenuSeparator className="bg-white/8" />
+
+        {onRefresh && (
+          <ContextMenuItem onClick={onRefresh} className="gap-2 cursor-pointer">
+            <RotateCw className="w-4 h-4" />
+            Refresh
+          </ContextMenuItem>
         )}
 
         <ContextMenuSeparator className="bg-white/8" />
