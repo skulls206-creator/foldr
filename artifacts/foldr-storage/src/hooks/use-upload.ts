@@ -22,12 +22,25 @@ export function useUploadWithProgress() {
       const xhr = new XMLHttpRequest();
       const apiUrl = getBaseUrl() || "";
       xhr.open("POST", `${apiUrl}/api/files/upload`);
+
+      // Send auth cookie (if SameSite=None) AND Bearer token fallback
       xhr.withCredentials = true;
+      const token = localStorage.getItem("foldr-auth-token");
+      if (token) {
+        xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+      }
 
       xhr.upload.onprogress = (e) => {
         if (e.lengthComputable) {
           const percentComplete = Math.round((e.loaded / e.total) * 100);
           setProgress(percentComplete);
+        }
+      };
+
+      const showError = (title: string, detail: string) => {
+        setIsUploading(false);
+        if (!options?.silent) {
+          toast({ variant: "destructive", title, description: detail });
         }
       };
 
@@ -48,38 +61,22 @@ export function useUploadWithProgress() {
             resolve(xhr.responseText);
           }
         } else {
+          let detail = `HTTP ${xhr.status}`;
           try {
             const errResponse = JSON.parse(xhr.responseText);
-            if (!options?.silent) {
-              toast({
-                variant: "destructive",
-                title: "Upload Failed",
-                description: errResponse.message || "An error occurred during upload.",
-              });
-            }
-            reject(new Error(errResponse.message));
-          } catch (e) {
-            if (!options?.silent) {
-              toast({
-                variant: "destructive",
-                title: "Upload Failed",
-                description: "An unexpected error occurred.",
-              });
-            }
-            reject(new Error("Upload failed"));
+            if (errResponse.message) detail += ` — ${errResponse.message}`;
+            if (errResponse.detail) detail += ` — ${errResponse.detail}`;
+            if (errResponse.error) detail += ` — ${errResponse.error}`;
+          } catch {
+            if (xhr.responseText) detail += `: ${xhr.responseText.slice(0, 300)}`;
           }
+          showError("Upload Failed", detail);
+          reject(new Error(detail));
         }
       };
 
       xhr.onerror = () => {
-        setIsUploading(false);
-        if (!options?.silent) {
-          toast({
-            variant: "destructive",
-            title: "Network Error",
-            description: "Could not connect to the server.",
-          });
-        }
+        showError("Network Error", "Could not connect to the server. Check if the API is running and CORS is configured.");
         reject(new Error("Network error"));
       };
 
