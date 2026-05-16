@@ -4,6 +4,12 @@
 
 ## Unreleased / In Development
 
+### Mobile Edge Tightening
+- Reduced main content padding from 20px to 12px on mobile (p-5 → p-3)
+- Removed rounded corners and border from the list container on mobile for an edge-to-edge look
+- Reduced row horizontal padding from px-4 to px-3 on mobile
+- Reduced list header padding from px-4 to px-3 on mobile
+
 ### Refresh Button in Context Menus
 - Added Refresh button to file/folder right-click menus, three-dot menus, and background right-click area
 - Uses `queryClient.invalidateQueries` to refresh both file and folder lists
