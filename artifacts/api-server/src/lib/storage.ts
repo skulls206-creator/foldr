@@ -4,9 +4,14 @@ import {
   GetObjectCommand,
   DeleteObjectCommand,
 } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import crypto from "crypto";
 import { Readable } from "stream";
 import { logger } from "./logger";
+
+// Presigned R2 download URLs expire after 15 minutes. This caps the window of
+// exposure if a URL leaks (e.g. via logs, browser history, referrer headers).
+export const PRESIGNED_URL_TTL_SECONDS = 15 * 60;
 
 export interface UploadResult {
   cid: string;
@@ -24,7 +29,7 @@ export interface StorageAdapter {
   shareFile(cid: string, recipientAddresses: string[]): Promise<void>;
   revokeFileAccess(cid: string, revokeAddresses: string[]): Promise<void>;
   applyAccessCondition(cid: string, conditions: any[], aggregator?: string): Promise<void>;
-  downloadUrl(key: string): string;
+  downloadUrl(key: string): Promise<string>;
 }
 
 async function streamToBuffer(stream: Readable | ReadableStream): Promise<Buffer> {
@@ -144,8 +149,15 @@ class R2StorageAdapter implements StorageAdapter {
     logger.warn("applyAccessCondition: not supported for R2 backend — no-op");
   }
 
-  downloadUrl(key: string): string {
-    return `${this.publicUrl}/${key}`;
+  async downloadUrl(key: string): Promise<string> {
+    // Generate a short-lived presigned GET URL instead of a permanent public
+    // URL. Even if the R2 bucket has a public hostname, we route downloads
+    // through presigned URLs so access can be time-boxed.
+    return getSignedUrl(
+      this.client,
+      new GetObjectCommand({ Bucket: this.bucket, Key: key }),
+      { expiresIn: PRESIGNED_URL_TTL_SECONDS },
+    );
   }
 }
 

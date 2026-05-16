@@ -48,13 +48,14 @@ router.get("/share/:token", async (req: Request, res: Response) => {
   const downloadUrl = file.isEncrypted
     ? `/api/share/${shareLink.token}/download`
     : file.storageBackend === "r2"
-      ? getAdapter().downloadUrl(file.cid)
+      ? await getAdapter().downloadUrl(file.cid)
       : getLegacyDownloadUrl(file.storageBackend, file.cid);
 
   res.json({
     file: {
       id: file.id,
-      userId: file.userId,
+      // Owner userId intentionally omitted — share recipients should not be
+      // able to enumerate which user owns the file.
       name: file.name,
       size: Number(file.size),
       mimeType: file.mimeType,
@@ -116,7 +117,7 @@ router.get("/share/:token/download", async (req: Request, res: Response) => {
   }
 
   const redirectUrl = file.storageBackend === "r2"
-    ? getAdapter().downloadUrl(file.cid)
+    ? await getAdapter().downloadUrl(file.cid)
     : getLegacyDownloadUrl(file.storageBackend, file.cid);
   res.redirect(302, redirectUrl);
 });

@@ -2,6 +2,19 @@
 
 ## Unreleased / In Development
 
+### Security Audit — API Auth & Short-Lived Downloads
+- Verified all `/api/files`, `/api/folders`, `/api/activity` routes are gated by `requireAuth` middleware — confirmed via `curl` that unauthenticated requests return 401
+- Verified share routes (`/api/share/:token`, `/api/shared-folder/:token`) validate tokens server-side with expiry + max-view checks via `resolveShareLink`
+- **R2 download URLs are now presigned with a 15-minute expiry** (`PRESIGNED_URL_TTL_SECONDS = 900` in `storage.ts`) — previously returned a permanent public-bucket URL. Caps the leak window if a URL appears in logs, browser history, or referrer headers
+- `downloadUrl()` signature changed to `async` — call sites in `files.ts` (3) and `share.ts` (2) updated to `await`
+- `/share/:token` response no longer exposes the file owner's `userId` — prevents share recipients from enumerating ownership
+- New dep: `@aws-sdk/s3-request-presigner` for generating time-limited GET URLs
+
+### Live Site ↔ Backend Connected
+- `VITE_API_URL` GitHub Actions secret set to `https://foldr.khurk.services` (the deployed Replit autoscale production URL)
+- Rebuilt via `workflow_dispatch` — Pages build now bakes the API URL into the static frontend so `khurk.xyz` can log in, list files, and upload against the live backend
+- Verified `GET /api/healthz` returns 200 and CORS allowlist correctly echoes `https://khurk.xyz` on cross-origin requests
+
 ### GitHub Pages Deployment
 - Added `.github/workflows/deploy-pages.yml` — automated build and deploy to GitHub Pages on every push to `main`
 - Build injects `VITE_API_URL` from a GitHub Actions secret so the static frontend calls the live Replit API

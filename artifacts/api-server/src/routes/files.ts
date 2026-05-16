@@ -290,7 +290,7 @@ router.post("/bulk-download", requireAuth, async (req: Request, res: Response) =
         fileBuffer = await adapter.downloadAndDecrypt(file.cid, file.id);
       } else {
         const downloadUrl = file.storageBackend === "r2"
-          ? adapter.downloadUrl(file.cid)
+          ? await adapter.downloadUrl(file.cid)
           : getLegacyDownloadUrl(file.storageBackend, file.cid);
         const resp = await fetch(downloadUrl);
         if (!resp.ok) continue;
@@ -862,7 +862,7 @@ router.get("/:id/thumbnail", requireAuth, async (req: Request, res: Response) =>
 
   try {
     const adapter = getAdapter();
-    const gateway = adapter.downloadUrl(file.thumbnailCid);
+    const gateway = await adapter.downloadUrl(file.thumbnailCid);
     res.redirect(302, gateway);
   } catch {
     res.status(500).json({ error: "Could not serve thumbnail" });
@@ -897,7 +897,7 @@ router.get("/:id/download", requireAuth, async (req: Request, res: Response) => 
   }
 
   const downloadUrl = file.storageBackend === "r2"
-    ? getAdapter().downloadUrl(file.cid)
+    ? await getAdapter().downloadUrl(file.cid)
     : getLegacyDownloadUrl(file.storageBackend, file.cid);
   res.redirect(302, downloadUrl);
 });
