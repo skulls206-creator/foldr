@@ -47,7 +47,7 @@ export default function SharePage() {
       <header className="p-6 flex justify-between items-center z-10 border-b border-white/5">
         <div className="flex items-center gap-2">
           <HardDrive className="w-6 h-6 text-primary" />
-          <span className="font-display font-bold text-xl tracking-tight text-primary">foldr</span>
+          <span className="font-display font-bold text-xl tracking-tight text-primary">FOLDR</span>
         </div>
       </header>
 

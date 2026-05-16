@@ -5,55 +5,36 @@ import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 import { VitePWA } from "vite-plugin-pwa";
 
-const isStaticBuild = process.env.STATIC_BUILD === "true";
+const rawPort = process.env.PORT;
+const port = rawPort ? Number(rawPort) : 3000;
 
-let port: number | undefined;
-if (!isStaticBuild) {
-  const rawPort = process.env.PORT;
-  if (!rawPort) {
-    throw new Error(
-      "PORT environment variable is required for dev/preview servers.",
-    );
-  }
-  port = Number(rawPort);
-  if (Number.isNaN(port) || port <= 0) {
-    throw new Error(`Invalid PORT value: "${rawPort}"`);
-  }
-}
+const basePath = process.env.BASE_PATH ?? "/";
 
-const basePath = process.env.BASE_PATH || (isStaticBuild ? "/" : undefined);
-if (!basePath) {
-  throw new Error(
-    "BASE_PATH environment variable is required.",
-  );
-}
+const isReplit = process.env.REPL_ID !== undefined;
+const isDev = process.env.NODE_ENV !== "production";
 
 export default defineConfig({
   base: basePath,
   plugins: [
     react(),
     tailwindcss(),
-    runtimeErrorOverlay(),
+    ...(isReplit ? [runtimeErrorOverlay()] : []),
     VitePWA({
       registerType: "autoUpdate",
       strategies: "injectManifest",
       srcDir: "src",
       filename: "sw.ts",
       injectRegister: "auto",
-      // Use our existing manifest.json, don't auto-generate one
       manifest: false,
       includeAssets: ["favicon.svg", "apple-touch-icon.svg"],
       injectManifest: {
-        // Precache all Vite build outputs (JS, CSS, HTML, SVG, PNG, fonts)
         globPatterns: ["**/*.{js,css,html,svg,png,woff2}"],
       },
       devOptions: {
-        enabled: true,
-        type: "module",
+        enabled: false,
       },
     }),
-    ...(process.env.NODE_ENV !== "production" &&
-    process.env.REPL_ID !== undefined
+    ...(isDev && isReplit
       ? [
           await import("@replit/vite-plugin-cartographer").then((m) =>
             m.cartographer({
@@ -75,23 +56,24 @@ export default defineConfig({
   },
   root: path.resolve(import.meta.dirname),
   build: {
-    outDir: path.resolve(
-      import.meta.dirname,
-      isStaticBuild ? "dist" : "dist/public",
-    ),
+    outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
   },
   server: {
-    port: port || 3000,
+    port,
     host: "0.0.0.0",
     allowedHosts: true,
+    headers: {
+      "Cache-Control": "no-store, no-cache, must-revalidate",
+      "Pragma": "no-cache",
+    },
     fs: {
       strict: true,
       deny: ["**/.*"],
     },
   },
   preview: {
-    port: port || 3000,
+    port,
     host: "0.0.0.0",
     allowedHosts: true,
   },

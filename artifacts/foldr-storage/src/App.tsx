@@ -1,24 +1,21 @@
-import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
-import { useEffect } from "react";
+import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/contexts/theme-context";
 import { FolderSyncProvider } from "@/contexts/folder-sync-context";
-import { setBaseUrl, setAuthTokenGetter } from "@workspace/api-client-react";
+import { setAuthTokenGetter, setBaseUrl } from "@workspace/api-client-react";
+
+// Point the API client at the deployed backend when VITE_API_URL is set.
+// In Replit dev the variable is unset so all calls stay relative (same-origin).
+// On GitHub Pages it's injected at build time via a GitHub Actions secret.
+setBaseUrl((import.meta.env.VITE_API_URL as string | undefined) ?? null);
 
 // Register the localStorage bearer-token getter once at module load.
 // In normal browser sessions the cookie handles auth, but inside cross-site
-// iframes (e.g. KHURK OS) third-party cookies are blocked — the getter makes
-// every customFetch call attach Authorization: Bearer <token> as a fallback.
+// iframes (e.g. KHURK OS / GitHub Pages) third-party cookies are blocked —
+// the getter makes every customFetch call attach Authorization: Bearer <token>.
 setAuthTokenGetter(() => localStorage.getItem("foldr-auth-token"));
-
-// When deployed statically (GH Pages, etc.) API calls need to go to the live
-// Replit backend.  On Replit itself the frontend and API share an origin so
-// relative paths work fine.
-if (import.meta.env.VITE_API_URL) {
-  setBaseUrl(import.meta.env.VITE_API_URL);
-}
 
 // Pages
 import Dashboard from "@/pages/dashboard";
@@ -35,28 +32,16 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: false,
-      retry: 1,
+      retry: (failureCount, error: unknown) => {
+        const status = (error as any)?.status;
+        if (status >= 400 && status < 500) return false;
+        return failureCount < 1;
+      },
     }
   }
 });
 
 function Router() {
-  // SPA redirect handler for GH Pages (reads from 404.html)
-  const [, setLocation] = useLocation();
-  useEffect(() => {
-    try {
-      const stored = sessionStorage.getItem("redirect");
-      if (stored) {
-        sessionStorage.removeItem("redirect");
-        // Only redirect if it's not the root path (avoids loops)
-        const target = stored.replace(/\/$/, "") || "/";
-        if (target !== window.location.pathname.replace(/\/$/, "")) {
-          setLocation(target);
-        }
-      }
-    } catch {}
-  }, []);
-
   return (
     <Switch>
       <Route path="/" component={Dashboard} />

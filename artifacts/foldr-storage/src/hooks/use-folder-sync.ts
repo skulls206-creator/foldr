@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { customFetch } from "@workspace/api-client-react";
 
 // ── Constants ─────────────────────────────────────────────────────────────
 
@@ -139,37 +140,35 @@ async function dbDelete(store: string, key: string): Promise<void> {
 }
 
 // ── API helpers ───────────────────────────────────────────────────────────
+// All helpers go through customFetch so that setBaseUrl() in App.tsx routes
+// cross-origin requests (GitHub Pages → Replit API) correctly, and so that
+// the Bearer-token fallback is applied when third-party cookies are blocked.
 
-function uploadFileXhr(file: File, folderId?: string | null): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", "/api/files/upload");
-    xhr.withCredentials = true;
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        resolve();
-      } else {
-        try {
-          const err = JSON.parse(xhr.responseText);
-          reject(new Error(err.error ?? `Upload failed (${xhr.status})`));
-        } catch {
-          reject(new Error(`Upload failed (${xhr.status})`));
-        }
-      }
-    };
-    xhr.onerror = () => reject(new Error("Network error during upload"));
-    const fd = new FormData();
-    fd.append("file", file);
-    fd.append("encrypt", "true");
-    if (folderId) fd.append("folderId", folderId);
-    xhr.send(fd);
+function parseCloudFile(f: any): CloudFile {
+  return {
+    id: f.id,
+    name: f.name,
+    size: Number(f.size),
+    folderId: f.folderId ?? null,
+    updatedAt: f.updatedAt,
+    createdAt: f.createdAt,
+  };
+}
+
+async function uploadFileTo(file: File, folderId?: string | null): Promise<void> {
+  const fd = new FormData();
+  fd.append("file", file);
+  fd.append("encrypt", "true");
+  if (folderId) fd.append("folderId", folderId);
+  await customFetch("/api/files/upload", {
+    method: "POST",
+    credentials: "include",
+    body: fd,
   });
 }
 
 async function fetchAllCloudFolders(): Promise<CloudFolder[]> {
-  const res = await fetch("/api/folders", { credentials: "include" });
-  if (!res.ok) throw new Error("Could not fetch folders from server");
-  const data = await res.json();
+  const data = await customFetch<{ folders?: any[] }>("/api/folders", { credentials: "include" });
   return (data.folders ?? []).map((f: any) => ({
     id: f.id,
     name: f.name,
@@ -178,54 +177,33 @@ async function fetchAllCloudFolders(): Promise<CloudFolder[]> {
 }
 
 async function createCloudFolder(name: string, parentId: string | null): Promise<CloudFolder> {
-  const res = await fetch("/api/folders", {
+  const f = await customFetch<{ id: string; name: string; parentId?: string | null }>("/api/folders", {
     method: "POST",
     credentials: "include",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ name, parentId: parentId ?? undefined }),
   });
-  if (!res.ok) throw new Error(`Could not create folder "${name}" in app`);
-  const f = await res.json();
   return { id: f.id, name: f.name, parentId: f.parentId ?? null };
 }
 
 async function listAllCloudFiles(): Promise<CloudFile[]> {
-  const first = await fetch("/api/files?limit=100&page=1", { credentials: "include" });
-  if (!first.ok) throw new Error("Could not reach the server to list files");
-  const data = await first.json();
-  const files: CloudFile[] = (data.files ?? []).map((f: any) => ({
-    id: f.id,
-    name: f.name,
-    size: Number(f.size),
-    folderId: f.folderId ?? null,
-    updatedAt: f.updatedAt,
-    createdAt: f.createdAt,
-  }));
-  const total: number = data.total ?? files.length;
+  const data = await customFetch<{ files?: any[]; total?: number }>("/api/files?limit=100&page=1", { credentials: "include" });
+  const files: CloudFile[] = (data.files ?? []).map(parseCloudFile);
+  const total = data.total ?? files.length;
   if (total > 100) {
     const pages = Math.ceil(total / 100);
     for (let p = 2; p <= pages; p++) {
-      const r = await fetch(`/api/files?limit=100&page=${p}`, { credentials: "include" });
-      if (r.ok) {
-        const d = await r.json();
-        files.push(...(d.files ?? []).map((f: any) => ({
-          id: f.id,
-          name: f.name,
-          size: Number(f.size),
-          folderId: f.folderId ?? null,
-          updatedAt: f.updatedAt,
-          createdAt: f.createdAt,
-        })));
-      }
+      const d = await customFetch<{ files?: any[] }>(`/api/files?limit=100&page=${p}`, { credentials: "include" });
+      files.push(...(d.files ?? []).map(parseCloudFile));
     }
   }
   return files;
 }
 
 async function downloadCloudFile(fileId: string): Promise<Blob> {
-  const res = await fetch(`/api/files/${fileId}/download`, { credentials: "include" });
-  if (!res.ok) throw new Error(`Download failed (${res.status})`);
-  return res.blob();
+  return customFetch<Blob>(`/api/files/${fileId}/download`, {
+    credentials: "include",
+    responseType: "blob",
+  });
 }
 
 // ── Recursive directory walker ────────────────────────────────────────────
@@ -528,7 +506,7 @@ export function useFolderSync() {
         const key = `${entry.cloudFolderId ?? "root"}::${entry.file.name}`;
         setState(s => ({ ...s, progress: { current, total, file: entry.file.name } }));
         try {
-          await uploadFileXhr(entry.file, entry.cloudFolderId);
+          await uploadFileTo(entry.file, entry.cloudFolderId);
           result.uploaded++;
           // Record fingerprint so this exact file is skipped on future syncs
           // unless its size or lastModified actually changes on disk.

@@ -9,14 +9,19 @@ export function useUploadWithProgress() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const upload = async (file: File, encrypt: boolean, folderId?: string) => {
+  const upload = async (
+    file: File,
+    encrypt: boolean,
+    folderId?: string,
+    options?: { silent?: boolean }
+  ) => {
     setIsUploading(true);
     setProgress(0);
 
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       xhr.open("POST", "/api/files/upload");
-      xhr.withCredentials = true; // Essential for sending the httpOnly cookie
+      xhr.withCredentials = true;
 
       xhr.upload.onprogress = (e) => {
         if (e.lengthComputable) {
@@ -30,12 +35,13 @@ export function useUploadWithProgress() {
         if (xhr.status >= 200 && xhr.status < 300) {
           try {
             const response = JSON.parse(xhr.responseText);
-            // Invalidate file list to show new file
             queryClient.invalidateQueries({ queryKey: ["/api/files"] });
-            toast({
-              title: "Upload Complete",
-              description: `${file.name} has been uploaded securely.`,
-            });
+            if (!options?.silent) {
+              toast({
+                title: "Upload Complete",
+                description: `${file.name} has been uploaded securely.`,
+              });
+            }
             resolve(response);
           } catch (e) {
             resolve(xhr.responseText);
@@ -43,18 +49,22 @@ export function useUploadWithProgress() {
         } else {
           try {
             const errResponse = JSON.parse(xhr.responseText);
-            toast({
-              variant: "destructive",
-              title: "Upload Failed",
-              description: errResponse.message || "An error occurred during upload.",
-            });
+            if (!options?.silent) {
+              toast({
+                variant: "destructive",
+                title: "Upload Failed",
+                description: errResponse.message || "An error occurred during upload.",
+              });
+            }
             reject(new Error(errResponse.message));
           } catch (e) {
-            toast({
-              variant: "destructive",
-              title: "Upload Failed",
-              description: "An unexpected error occurred.",
-            });
+            if (!options?.silent) {
+              toast({
+                variant: "destructive",
+                title: "Upload Failed",
+                description: "An unexpected error occurred.",
+              });
+            }
             reject(new Error("Upload failed"));
           }
         }
@@ -62,11 +72,13 @@ export function useUploadWithProgress() {
 
       xhr.onerror = () => {
         setIsUploading(false);
-        toast({
-          variant: "destructive",
-          title: "Network Error",
-          description: "Could not connect to the server.",
-        });
+        if (!options?.silent) {
+          toast({
+            variant: "destructive",
+            title: "Network Error",
+            description: "Could not connect to the server.",
+          });
+        }
         reject(new Error("Network error"));
       };
 

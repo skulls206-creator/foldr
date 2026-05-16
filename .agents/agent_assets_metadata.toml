@@ -1,5 +1,10 @@
 uploads = []
-generated = []
+
+[[generated]]
+id = "BqPHghHfz7gbbJ8VFvUqB"
+uri = "file://artifacts/foldr-storage/public/icon-foldr-generated.png"
+type = "image"
+title = "FOLDR crystal folder app icon"
 
 [[outputs]]
 id = "xSJwbZtJr-0Z68erKul8r"

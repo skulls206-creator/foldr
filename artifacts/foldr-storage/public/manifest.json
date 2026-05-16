@@ -1,21 +1,27 @@
 {
-  "name": "foldr",
-  "short_name": "foldr",
-  "description": "P2P encrypted file storage powered by IPFS and Filecoin",
-  "start_url": "/",
+  "id": "/",
+  "name": "FOLDR",
+  "short_name": "FOLDR",
+  "description": "Encrypted cloud file storage. Upload, organise, and share files securely with AES-256 encryption.",
+  "start_url": "/?utm_source=pwa",
   "scope": "/",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "background_color": "#06080f",
   "theme_color": "#06080f",
   "orientation": "any",
+  "lang": "en",
+  "dir": "ltr",
+  "prefer_related_applications": false,
+  "handle_links": "preferred",
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "categories": ["productivity", "utilities"],
   "icons": [
-    {
-      "src": "/favicon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
     {
       "src": "/icon-192.png",
       "sizes": "192x192",
@@ -26,18 +32,63 @@
       "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-1024.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
-  "categories": ["productivity", "utilities"],
-  "lang": "en",
+  "screenshots": [
+    {
+      "src": "/images/screenshot-wide.jpg",
+      "sizes": "1280x720",
+      "type": "image/jpeg",
+      "form_factor": "wide",
+      "label": "FOLDR sign-in — desktop view"
+    },
+    {
+      "src": "/images/screenshot-narrow.jpg",
+      "sizes": "390x844",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "FOLDR sign-in — mobile view"
+    }
+  ],
   "shortcuts": [
     {
       "name": "Upload File",
       "short_name": "Upload",
-      "description": "Upload a new file to foldr",
+      "description": "Upload a new file to FOLDR",
       "url": "/?action=upload",
       "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "share_target": {
+    "action": "/?action=upload",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "files": [
+        {
+          "name": "file",
+          "accept": ["*/*"]
+        }
+      ]
+    }
+  },
+  "protocol_handlers": [
+    {
+      "protocol": "web+foldr",
+      "url": "/?uri=%s"
     }
   ]
 }

@@ -124,7 +124,7 @@ export const ListFilesResponse = zod.object({
       mimeType: zod.string(),
       cid: zod.string(),
       lighthouseFileId: zod.string().nullish(),
-      storageBackend: zod.enum(["lighthouse", "fallback"]),
+      storageBackend: zod.enum(["lighthouse", "fallback", "r2"]),
       isEncrypted: zod.boolean(),
       isDeleted: zod.boolean(),
       accessCondition: zod.object({}).passthrough().nullish(),
@@ -162,7 +162,7 @@ export const GetFileResponse = zod.object({
   mimeType: zod.string(),
   cid: zod.string(),
   lighthouseFileId: zod.string().nullish(),
-  storageBackend: zod.enum(["lighthouse", "fallback"]),
+  storageBackend: zod.enum(["lighthouse", "fallback", "r2"]),
   isEncrypted: zod.boolean(),
   isDeleted: zod.boolean(),
   accessCondition: zod.object({}).passthrough().nullish(),
@@ -291,7 +291,7 @@ export const GetSharedFileResponse = zod.object({
     mimeType: zod.string(),
     cid: zod.string(),
     lighthouseFileId: zod.string().nullish(),
-    storageBackend: zod.enum(["lighthouse", "fallback"]),
+    storageBackend: zod.enum(["lighthouse", "fallback", "r2"]),
     isEncrypted: zod.boolean(),
     isDeleted: zod.boolean(),
     accessCondition: zod.object({}).passthrough().nullish(),
@@ -313,5 +313,5 @@ export const GetSharedFileResponse = zod.object({
  * @summary Get storage backend status
  */
 export const GetStorageStatusResponse = zod.object({
-  backend: zod.enum(["lighthouse", "fallback"]),
+  backend: zod.enum(["lighthouse", "fallback", "r2"]),
 });

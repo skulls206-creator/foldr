@@ -63,7 +63,6 @@ export const filesTable = pgTable("files", {
   isDeleted: boolean("is_deleted").notNull().default(false),
   isStarred: boolean("is_starred").notNull().default(false),
   accessCondition: jsonb("access_condition"),
-  encryptionKeyEncrypted: text("encryption_key_encrypted"),
   thumbnailCid: text("thumbnail_cid"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

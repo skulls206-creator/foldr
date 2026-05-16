@@ -16,7 +16,7 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **API codegen**: Orval (from OpenAPI spec)
 - **Build**: esbuild (CJS bundle)
 - **Auth**: JWT (cookie-based) with tokenVersion for session invalidation, TOTP 2FA
-- **Storage**: Lighthouse.storage (IPFS) with Kavach encryption
+- **Storage**: Cloudflare R2 (`videostorage1` bucket) with server-side AES-256-GCM encryption (HKDF per-file key derivation from master key + fileId)
 - **Frontend**: React 19 + Vite + Tailwind CSS + Radix UI + TanStack Query + Wouter
 
 ## Structure

@@ -117,7 +117,7 @@ export default function AuthPage() {
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
               <div className="flex items-center gap-2 mb-6">
                 <HardDrive className="w-5 h-5 text-primary flex-shrink-0" />
-                <span className="font-display font-bold text-base tracking-tight text-primary">foldr</span>
+                <span className="font-display font-bold text-base tracking-tight text-primary">FOLDR</span>
               </div>
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
@@ -133,6 +133,8 @@ export default function AuthPage() {
                   value={totpCode}
                   onChange={e => setTotpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                   placeholder="000000"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
                   className="font-mono text-2xl tracking-widest text-center bg-black/30 border-white/10 h-16 rounded-xl focus-visible:ring-primary/30"
                   maxLength={6}
                   autoFocus
@@ -181,7 +183,7 @@ export default function AuthPage() {
             
             <div className="flex items-center gap-2 mb-8">
               <HardDrive className="w-5 h-5 text-primary flex-shrink-0" />
-              <span className="font-display font-bold text-base tracking-tight text-primary">foldr</span>
+              <span className="font-display font-bold text-base tracking-tight text-primary">FOLDR</span>
             </div>
 
             <div className="mb-8">
@@ -210,7 +212,7 @@ export default function AuthPage() {
                     <FormItem>
                       <FormLabel className="text-white/80">Email</FormLabel>
                       <FormControl>
-                        <Input placeholder="you@example.com" {...field} className="bg-black/30 border-white/10 h-12 rounded-xl focus-visible:ring-primary/30" />
+                        <Input placeholder="you@example.com" autoComplete="email" type="email" {...field} className="bg-black/30 border-white/10 h-12 rounded-xl focus-visible:ring-primary/30" />
                       </FormControl>
                       <FormMessage className="text-destructive/80" />
                     </FormItem>
@@ -223,7 +225,7 @@ export default function AuthPage() {
                     <FormItem>
                       <FormLabel className="text-white/80">Password</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="••••••••" {...field} className="bg-black/30 border-white/10 h-12 rounded-xl focus-visible:ring-primary/30" />
+                        <Input type="password" placeholder="••••••••" autoComplete={isLogin ? "current-password" : "new-password"} {...field} className="bg-black/30 border-white/10 h-12 rounded-xl focus-visible:ring-primary/30" />
                       </FormControl>
                       <FormMessage className="text-destructive/80" />
                     </FormItem>

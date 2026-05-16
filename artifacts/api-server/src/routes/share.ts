@@ -1,9 +1,8 @@
 import { Router, type IRouter, Request, Response } from "express";
-import crypto from "crypto";
 import { db } from "@workspace/db";
 import { filesTable, shareLinksTable } from "@workspace/db";
 import { eq, and, sql } from "drizzle-orm";
-import { getAdapter } from "../lib/storage";
+import { getAdapter, getLegacyDownloadUrl } from "../lib/storage";
 
 const router: IRouter = Router();
 
@@ -46,6 +45,11 @@ router.get("/share/:token", async (req: Request, res: Response) => {
   }
 
   const { shareLink, file } = result;
+  const downloadUrl = file.isEncrypted
+    ? `/api/share/${shareLink.token}/download`
+    : file.storageBackend === "r2"
+      ? getAdapter().downloadUrl(file.cid)
+      : getLegacyDownloadUrl(file.storageBackend, file.cid);
 
   res.json({
     file: {
@@ -71,7 +75,7 @@ router.get("/share/:token", async (req: Request, res: Response) => {
       expiresAt: shareLink.expiresAt?.toISOString() ?? null,
       createdAt: shareLink.createdAt.toISOString(),
     },
-    downloadUrl: `/api/share/${shareLink.token}/download`,
+    downloadUrl,
   });
 });
 
@@ -92,19 +96,13 @@ router.get("/share/:token/download", async (req: Request, res: Response) => {
     .where(eq(shareLinksTable.id, shareLink.id));
 
   if (file.isEncrypted) {
+    if (file.storageBackend !== "r2") {
+      res.status(400).json({ error: "Legacy IPFS-encrypted files cannot be decrypted with the new storage backend." });
+      return;
+    }
     try {
       const adapter = getAdapter();
-      const rawKeyHex = await adapter.fetchEncryptionKey(file.lighthouseFileId ?? "");
-      const rawKey = Buffer.from(rawKeyHex, "hex");
-      const encryptedFile = await adapter.getFile(file.cid);
-      if (!encryptedFile) { res.status(404).json({ error: "File not found" }); return; }
-      const encryptedPayload = encryptedFile.body;
-      const iv = encryptedPayload.subarray(0, 12);
-      const authTag = encryptedPayload.subarray(12, 28);
-      const ciphertext = encryptedPayload.subarray(28);
-      const decipher = crypto.createDecipheriv("aes-256-gcm", rawKey, iv);
-      decipher.setAuthTag(authTag);
-      const decrypted = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
+      const decrypted = await adapter.downloadAndDecrypt(file.cid, file.id);
 
       res.setHeader("Content-Type", file.mimeType);
       res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(file.name)}"`);
@@ -117,16 +115,10 @@ router.get("/share/:token/download", async (req: Request, res: Response) => {
     return;
   }
 
-  // Plain file — proxy from R2
-  const adapter = getAdapter();
-  try {
-    const fileData = await adapter.getFile(file.cid);
-    if (!fileData) { res.status(404).json({ error: "File not found" }); return; }
-    res.setHeader("Content-Type", fileData.contentType);
-    res.setHeader("Content-Length", String(fileData.contentLength));
-    res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(file.name)}"`);
-    res.send(fileData.body);
-  } catch {
+  const redirectUrl = file.storageBackend === "r2"
+    ? getAdapter().downloadUrl(file.cid)
+    : getLegacyDownloadUrl(file.storageBackend, file.cid);
+  res.redirect(302, redirectUrl);
 });
 
 export default router;

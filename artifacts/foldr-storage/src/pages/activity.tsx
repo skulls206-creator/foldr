@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { Activity, Upload, Download, Trash2, Star, FolderPlus, RotateCcw, Move, Share2, Lock, Loader2, FileDown } from "lucide-react";
 import { AppLayout } from "@/components/layout/app-layout";
-import { useGetMe, useListFolders, useListActivity } from "@workspace/api-client-react";
+import { useGetMe, useListFolders, useListActivity, customFetch } from "@workspace/api-client-react";
 import type { ActivityLog } from "@workspace/api-client-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -86,13 +86,14 @@ export default function ActivityPage() {
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      const resp = await fetch("/api/activity/export", { credentials: "include" });
-      if (!resp.ok) throw new Error("Export failed");
-      const blob = await resp.blob();
+      const blob = await customFetch<Blob>("/api/activity/export", {
+        credentials: "include",
+        responseType: "blob",
+      });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `foldr-activity-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.download = `FOLDR-activity-${new Date().toISOString().slice(0, 10)}.csv`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -123,7 +124,7 @@ export default function ActivityPage() {
               <Activity className="w-6 h-6 text-primary" />
               Activity Log
             </h1>
-            <p className="text-sm text-muted-foreground mt-1">Your recent actions in foldr.storage</p>
+            <p className="text-sm text-muted-foreground mt-1">Your recent actions in FOLDR.storage</p>
           </div>
           <Button
             variant="outline"

@@ -50,6 +50,7 @@ export type FileStorageBackend =
 export const FileStorageBackend = {
   lighthouse: "lighthouse",
   fallback: "fallback",
+  r2: "r2",
 } as const;
 
 export type FileAccessCondition = { [key: string]: unknown } | null;

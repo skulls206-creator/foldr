@@ -431,7 +431,7 @@ export default function SettingsPage() {
             <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
             <div>
               <span className="font-semibold">No password recovery — </span>
-              <span className="text-amber-200/70">foldr does not send emails or support password recovery. Store your credentials safely.</span>
+              <span className="text-amber-200/70">FOLDR does not send emails or support password recovery. Store your credentials safely.</span>
             </div>
           </div>
         </section>
@@ -694,7 +694,7 @@ export default function SettingsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle className="text-destructive">Delete Account Permanently?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete your account and all files stored in foldr.storage. This action <strong>cannot be undone</strong>.
+              This will permanently delete your account and all files stored in FOLDR.storage. This action <strong>cannot be undone</strong>.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-2 py-2">

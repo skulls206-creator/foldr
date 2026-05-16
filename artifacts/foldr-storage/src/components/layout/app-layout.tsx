@@ -103,7 +103,7 @@ function IosInstallTip({ onClose }: { onClose: () => void }) {
       <p className="font-semibold text-primary flex items-center gap-1">
         <Smartphone className="w-3.5 h-3.5" /> Install on iOS
       </p>
-      <p>Tap <strong>Share</strong> then <strong>"Add to Home Screen"</strong> to install foldr.</p>
+      <p>Tap <strong>Share</strong> then <strong>"Add to Home Screen"</strong> to install FOLDR.</p>
     </div>
   );
 }
@@ -238,7 +238,7 @@ function SidebarInner({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <HardDrive className="w-5 h-5 text-primary flex-shrink-0" />
-            <span className="font-display font-bold text-lg tracking-tight text-primary">foldr</span>
+            <span className="font-display font-bold text-lg tracking-tight text-primary">FOLDR</span>
           </div>
           <SidebarTrigger className="text-muted-foreground/60 hover:text-foreground hover:bg-white/10 rounded-md p-1.5 transition-colors -mr-1">
             <X className="w-4 h-4" />
@@ -473,7 +473,7 @@ export function AppLayout({
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                   <Input
                     autoFocus
-                    placeholder="Search in foldr..."
+                    placeholder="Search in FOLDR..."
                     className="pl-9 bg-white/5 border-white/10 focus-visible:border-primary focus-visible:ring-primary/20 rounded-full h-9 w-full text-sm"
                     value={searchQuery}
                     onChange={(e) => onSearchChange(e.target.value)}
@@ -501,7 +501,7 @@ export function AppLayout({
                 <div className="relative flex-1 group hidden sm:block max-w-md">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                   <Input
-                    placeholder="Search in foldr..."
+                    placeholder="Search in FOLDR..."
                     className="pl-10 bg-white/5 border-white/10 focus-visible:border-primary focus-visible:ring-primary/20 rounded-full h-9 w-full"
                     value={searchQuery}
                     onChange={(e) => onSearchChange(e.target.value)}

@@ -10,6 +10,14 @@ initStorageAdapter();
 
 const app: Express = express();
 
+// Explicit allowlist — keeps cross-origin access locked to known frontends.
+// Replit preview and deploy domains are allowed for development/staging.
+const ALLOWED_ORIGINS = new Set([
+  "https://skulls206-creator.github.io",
+  "https://khurk.xyz",
+  "https://www.khurk.xyz",
+]);
+
 app.use(
   pinoHttp({
     logger,
@@ -29,33 +37,30 @@ app.use(
     },
   }),
 );
-const ALLOWED_ORIGINS = [
-  "http://localhost:5173",
-  "http://localhost:3000",
-  ...(process.env.REPLIT_DEV_DOMAIN
-    ? [`https://${process.env.REPLIT_DEV_DOMAIN}`]
-    : []),
-  ...(process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(",") : []),
-].filter(Boolean);
 
 app.use(
   cors({
-    origin: (origin, cb) => {
-      // Allow requests with no origin (server-to-server, curl, etc.)
-      if (!origin) return cb(null, true);
-      // Allow configured origins
-      if (ALLOWED_ORIGINS.some((o) => origin.startsWith(o))) return cb(null, true);
-      // Allow Replit preview domains
-      if (origin.endsWith(".replit.dev") || origin.endsWith(".replit.app")) return cb(null, true);
-      // Allow khurk.xyz and subdomains
-      if (origin.endsWith("khurk.xyz")) return cb(null, true);
-      // Allow github.io pages
-      if (origin.endsWith(".github.io")) return cb(null, true);
-      cb(null, true); // wide fallback for now
+    origin(origin, callback) {
+      // No origin = server-to-server / curl / same-origin — allow
+      if (!origin) return callback(null, true);
+      // Replit preview and deploy domains (development + staging)
+      if (
+        origin.endsWith(".replit.dev") ||
+        origin.endsWith(".replit.app") ||
+        origin.endsWith(".repl.co")
+      ) {
+        return callback(null, true);
+      }
+      // Production frontends
+      if (ALLOWED_ORIGINS.has(origin)) {
+        return callback(null, true);
+      }
+      callback(new Error(`CORS: origin not allowed — ${origin}`));
     },
     credentials: true,
   }),
 );
+
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

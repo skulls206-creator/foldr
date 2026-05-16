@@ -12,4 +12,5 @@ export type StorageStatusBackend =
 export const StorageStatusBackend = {
   lighthouse: "lighthouse",
   fallback: "fallback",
+  r2: "r2",
 } as const;

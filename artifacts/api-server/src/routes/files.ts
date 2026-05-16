@@ -7,7 +7,7 @@ import { db } from "@workspace/db";
 import { filesTable, shareLinksTable, fileVersionsTable, foldersTable } from "@workspace/db";
 import { eq, and, desc, like, count, isNull, sum, inArray, sql } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
-import { getAdapter } from "../lib/storage";
+import { getAdapter, getLegacyDownloadUrl } from "../lib/storage";
 import { logActivity } from "../lib/activity";
 
 const router: IRouter = Router();
@@ -77,9 +77,10 @@ router.post("/upload", requireAuth, upload.single("file"), async (req: Request, 
   }
 
   try {
+    const fileId = crypto.randomUUID();
     let result;
     if (encrypt) {
-      result = await adapter.uploadEncrypted(file.buffer, file.originalname, file.mimetype);
+      result = await adapter.uploadEncrypted(file.buffer, file.originalname, file.mimetype, fileId);
     } else {
       result = await adapter.uploadPlain(file.buffer, file.originalname, file.mimetype);
     }
@@ -87,6 +88,7 @@ router.post("/upload", requireAuth, upload.single("file"), async (req: Request, 
     const [inserted] = await db
       .insert(filesTable)
       .values({
+        id: fileId,
         userId: req.userId!,
         folderId: folderId ?? null,
         name: file.originalname,
@@ -187,7 +189,9 @@ router.delete("/trash", requireAuth, async (req: Request, res: Response) => {
     .where(and(eq(filesTable.userId, req.userId!), eq(filesTable.isDeleted, true)));
 
   for (const file of trashedFiles) {
-    try { await getAdapter().deleteFile(file.cid); } catch {}
+    if (file.storageBackend === "r2") {
+      try { await getAdapter().deleteFile(file.cid); } catch {}
+    }
   }
 
   if (trashedFiles.length > 0) {
@@ -221,7 +225,9 @@ router.post("/bulk-delete", requireAuth, async (req: Request, res: Response) => 
 
   for (const file of files) {
     await db.update(filesTable).set({ isDeleted: true, updatedAt: new Date() }).where(eq(filesTable.id, file.id));
-    try { await getAdapter().deleteFile(file.cid); } catch {}
+    if (file.storageBackend === "r2") {
+      try { await getAdapter().deleteFile(file.cid); } catch {}
+    }
   }
   res.json({ deleted: files.length });
 });
@@ -280,21 +286,15 @@ router.post("/bulk-download", requireAuth, async (req: Request, res: Response) =
     try {
       let fileBuffer: Buffer;
       if (file.isEncrypted) {
-        const rawKeyHex = await adapter.fetchEncryptionKey(file.lighthouseFileId ?? "");
-        const rawKey = Buffer.from(rawKeyHex, "hex");
-        const encryptedFile = await adapter.getFile(file.cid);
-        if (!encryptedFile) continue;
-        const payload = encryptedFile.body;
-        const iv = payload.subarray(0, 12);
-        const authTag = payload.subarray(12, 28);
-        const ciphertext = payload.subarray(28);
-        const decipher = crypto.createDecipheriv("aes-256-gcm", rawKey, iv);
-        decipher.setAuthTag(authTag);
-        fileBuffer = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
+        if (file.storageBackend !== "r2") continue;
+        fileBuffer = await adapter.downloadAndDecrypt(file.cid, file.id);
       } else {
-        const plainFile = await adapter.getFile(file.cid);
-        if (!plainFile) continue;
-        fileBuffer = plainFile.body;
+        const downloadUrl = file.storageBackend === "r2"
+          ? adapter.downloadUrl(file.cid)
+          : getLegacyDownloadUrl(file.storageBackend, file.cid);
+        const resp = await fetch(downloadUrl);
+        if (!resp.ok) continue;
+        fileBuffer = Buffer.from(await resp.arrayBuffer());
       }
       archive.append(fileBuffer, { name: file.name });
     } catch {
@@ -554,10 +554,12 @@ router.delete("/:id", requireAuth, async (req: Request, res: Response) => {
     .set({ isDeleted: true, updatedAt: new Date() })
     .where(eq(filesTable.id, file.id));
 
-  try {
-    await getAdapter().deleteFile(file.cid);
-  } catch (err: any) {
-    req.log.warn({ err }, "R2 delete failed after soft-delete; continuing");
+  if (file.storageBackend === "r2") {
+    try {
+      await getAdapter().deleteFile(file.cid);
+    } catch (err: any) {
+      req.log.warn({ err }, "R2 deleteFile failed after soft-delete; continuing");
+    }
   }
 
   logActivity({
@@ -753,6 +755,10 @@ router.post("/:id/share-encrypted", requireAuth, async (req: Request, res: Respo
 
   if (!file) { res.status(404).json({ error: "File not found" }); return; }
   if (!file.isEncrypted) { res.status(400).json({ error: "File is not encrypted" }); return; }
+  if (file.storageBackend === "r2") {
+    res.status(400).json({ error: "Wallet-based sharing is not supported for files stored on R2. Use share links instead." });
+    return;
+  }
 
   const { recipientAddress } = req.body ?? {};
   if (!recipientAddress) { res.status(400).json({ error: "recipientAddress is required" }); return; }
@@ -775,6 +781,10 @@ router.delete("/:id/revoke-access", requireAuth, async (req: Request, res: Respo
 
   if (!file) { res.status(404).json({ error: "File not found" }); return; }
   if (!file.isEncrypted) { res.status(400).json({ error: "File is not encrypted" }); return; }
+  if (file.storageBackend === "r2") {
+    res.status(400).json({ error: "Wallet-based access revocation is not supported for files stored on R2." });
+    return;
+  }
 
   const { revokeAddress } = req.body ?? {};
   if (!revokeAddress) { res.status(400).json({ error: "revokeAddress is required" }); return; }
@@ -797,6 +807,10 @@ router.post("/:id/set-token-gate", requireAuth, async (req: Request, res: Respon
 
   if (!file) { res.status(404).json({ error: "File not found" }); return; }
   if (!file.isEncrypted) { res.status(400).json({ error: "File is not encrypted" }); return; }
+  if (file.storageBackend === "r2") {
+    res.status(400).json({ error: "Token gating is not supported for files stored on R2." });
+    return;
+  }
 
   const { conditions, aggregator } = req.body ?? {};
   if (!conditions || !Array.isArray(conditions) || conditions.length === 0) {
@@ -821,27 +835,13 @@ router.post("/:id/set-token-gate", requireAuth, async (req: Request, res: Respon
 
 // ── Download ─────────────────────────────────────────────────────────────
 
-async function decryptAndSend(cid: string, mimeType: string, filename: string, packagedKey: string, res: Response) {
+async function decryptAndSend(cid: string, fileId: string, storageBackend: string, mimeType: string, filename: string, res: Response) {
+  if (storageBackend !== "r2") {
+    res.status(400).json({ error: "Legacy IPFS-encrypted files cannot be decrypted with the new storage backend. Please re-upload the file." });
+    return;
+  }
   const adapter = getAdapter();
-
-  // 1. Decrypt the file-level encryption key
-  const rawKeyHex = await adapter.fetchEncryptionKey(packagedKey);
-  const rawKey = Buffer.from(rawKeyHex, "hex");
-
-  // 2. Fetch encrypted payload from R2
-  const encryptedFile = await adapter.getFile(cid);
-  if (!encryptedFile) throw new Error("File not found in R2");
-  const encryptedPayload = encryptedFile.body;
-
-  // 3. Parse: iv(12) + authTag(16) + ciphertext
-  const iv = encryptedPayload.subarray(0, 12);
-  const authTag = encryptedPayload.subarray(12, 28);
-  const ciphertext = encryptedPayload.subarray(28);
-
-  // 4. Decrypt
-  const decipher = crypto.createDecipheriv("aes-256-gcm", rawKey, iv);
-  decipher.setAuthTag(authTag);
-  const decrypted = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
+  const decrypted = await adapter.downloadAndDecrypt(cid, fileId);
 
   res.setHeader("Content-Type", mimeType);
   res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(filename)}"`);
@@ -862,13 +862,9 @@ router.get("/:id/thumbnail", requireAuth, async (req: Request, res: Response) =>
 
   try {
     const adapter = getAdapter();
-    const fileData = await adapter.getFile(file.thumbnailCid);
-    if (!fileData) { res.status(404).json({ error: "Thumbnail not found" }); return; }
-    res.setHeader("Content-Type", fileData.contentType);
-    res.setHeader("Content-Length", String(fileData.contentLength));
-    res.send(fileData.body);
-  } catch (err: any) {
-    req.log.error({ err }, "Thumbnail proxy failed");
+    const gateway = adapter.downloadUrl(file.thumbnailCid);
+    res.redirect(302, gateway);
+  } catch {
     res.status(500).json({ error: "Could not serve thumbnail" });
   }
 });
@@ -892,7 +888,7 @@ router.get("/:id/download", requireAuth, async (req: Request, res: Response) => 
 
   if (file.isEncrypted) {
     try {
-      await decryptAndSend(file.cid, file.mimeType, file.name, file.lighthouseFileId ?? "", res);
+      await decryptAndSend(file.cid, file.id, file.storageBackend, file.mimeType, file.name, res);
     } catch (err: any) {
       req.log.error({ err }, "Decryption failed");
       res.status(500).json({ error: err.message ?? "Decryption failed" });
@@ -900,18 +896,10 @@ router.get("/:id/download", requireAuth, async (req: Request, res: Response) => 
     return;
   }
 
-  // Plain file: redirect to R2 public URL or proxy
-  const adapter = getAdapter();
-  try {
-    res.redirect(302, adapter.downloadUrl(file.cid));
-  } catch {
-    const fileData = await adapter.getFile(file.cid);
-    if (!fileData) { res.status(404).json({ error: "File not found" }); return; }
-    res.setHeader("Content-Type", fileData.contentType);
-    res.setHeader("Content-Length", String(fileData.contentLength));
-    res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(file.name)}"`);
-    res.send(fileData.body);
-  }
+  const downloadUrl = file.storageBackend === "r2"
+    ? getAdapter().downloadUrl(file.cid)
+    : getLegacyDownloadUrl(file.storageBackend, file.cid);
+  res.redirect(302, downloadUrl);
 });
 
 router.get("/:id/decrypt", requireAuth, async (req: Request, res: Response) => {
@@ -925,7 +913,7 @@ router.get("/:id/decrypt", requireAuth, async (req: Request, res: Response) => {
   if (!file.isEncrypted) { res.status(400).json({ error: "File is not encrypted" }); return; }
 
   try {
-    await decryptAndSend(file.cid, file.mimeType, file.name, file.lighthouseFileId ?? "", res);
+    await decryptAndSend(file.cid, file.id, file.storageBackend, file.mimeType, file.name, res);
   } catch (err: any) {
     req.log.error({ err }, "Decryption failed");
     res.status(500).json({ error: err.message ?? "Decryption failed" });
