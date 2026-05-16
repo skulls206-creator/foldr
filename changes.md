@@ -4,6 +4,12 @@
 
 ## Unreleased / In Development
 
+### Icon-Left Alignment (Windows Explorer feel)
+- Removed 16px `pl-4` right-side dead space before the menu button (frees that space for filenames)
+- Reduced icon→name gap from 12px to 8px on mobile
+- Reduced icon wrapper padding from 6px to 4px on mobile
+- All density-class overrides cleaned up — icon sizing consistent via density classes
+
 ### Mobile Edge Tightening
 - Reduced main content padding from 20px to 12px on mobile (p-5 → p-3)
 - Removed rounded corners and border from the list container on mobile for an edge-to-edge look
