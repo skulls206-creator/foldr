@@ -37,24 +37,24 @@ export function getDensityClasses(density: RowDensity): DensityClasses {
   switch (density) {
     case "compact":
       return {
-        rowPy: "py-0.5 px-3",
+        rowPy: "py-1 sm:py-0.5 px-4 sm:px-3",
         iconSize: "w-3.5 h-3.5",
         iconWrap: "p-0.5",
         gap: "gap-2",
       };
     case "cozy":
       return {
-        rowPy: "py-1 px-3",
+        rowPy: "py-2 sm:py-1 px-4 sm:px-3",
         iconSize: "w-3.5 h-3.5",
         iconWrap: "p-1",
-        gap: "gap-2.5",
+        gap: "gap-2.5 sm:gap-2.5",
       };
     default: // comfortable
       return {
-        rowPy: "py-1.5 px-3",
+        rowPy: "py-3 sm:py-2 px-4 sm:px-4",
         iconSize: "w-4 h-4",
         iconWrap: "p-1.5",
-        gap: "gap-3",
+        gap: "gap-3 sm:gap-3",
       };
   }
 }

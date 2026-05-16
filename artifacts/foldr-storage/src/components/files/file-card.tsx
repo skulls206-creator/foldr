@@ -57,7 +57,7 @@ export function FileCard({
     >
     <div
       className={`
-        relative group rounded-2xl p-5 transition-all duration-300 cursor-pointer
+        relative group rounded-2xl p-6 sm:p-5 transition-all duration-300 cursor-pointer
         ${isSelected
           ? "bg-primary/10 border border-primary/30 shadow-lg shadow-primary/10"
           : file.isEncrypted ? "glass-panel-accent" : "glass-panel"
@@ -110,7 +110,7 @@ export function FileCard({
       )}
 
       <div className="flex flex-col items-center text-center gap-4" onDoubleClick={handleDownload}>
-        <div className="relative p-4 rounded-xl bg-white/5 border border-white/5 group-hover:scale-105 transition-transform duration-300 overflow-hidden">
+        <div className="relative p-5 sm:p-4 rounded-xl bg-white/5 border border-white/5 group-hover:scale-105 transition-transform duration-300 overflow-hidden">
           {(file as any).thumbnailCid ? (
             <img
               src={`/api/files/${file.id}/thumbnail`}
