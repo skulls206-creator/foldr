@@ -630,7 +630,7 @@ export function AppLayout({
           </header>
 
           <main className={cn(
-            "flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 relative",
+            "flex-1 overflow-y-auto p-5 sm:p-6 lg:p-8 relative",
             hasMobileSyncBar && "pb-28 sm:pb-6 lg:pb-8"
           )}>
             {children}

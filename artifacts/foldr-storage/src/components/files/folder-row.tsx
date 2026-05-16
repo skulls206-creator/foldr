@@ -87,12 +87,17 @@ export function FolderRow({ folder, isSelected, isSelecting, density = "comforta
         </div>
 
         {/* Folder icon */}
-        <div className={`flex-shrink-0 ${dc.iconWrap} rounded-md bg-yellow-500/10`}>
-          <FolderOpen className={`${dc.iconSize} text-yellow-400`} />
+        <div className={`flex-shrink-0 ${density === "comfortable" ? "p-2 sm:p-1.5" : dc.iconWrap} rounded-md bg-yellow-500/10`}>
+          <FolderOpen className={`${density === "comfortable" ? "w-5 h-5 sm:w-4 sm:h-4" : dc.iconSize} text-yellow-400`} />
         </div>
 
-        {/* Name */}
-        <span className="font-medium text-sm text-foreground/85 truncate flex-1 min-w-0">{folder.name}</span>
+        {/* Name + mobile subtitle */}
+        <div className="flex-1 min-w-0">
+          <span className="font-medium text-sm text-foreground/85 truncate block">{folder.name}</span>
+          <span className="text-[11px] text-muted-foreground/50 sm:hidden block truncate mt-0.5">
+            {formatBytes(totalSize)} <span className="mx-1">·</span> Folder
+          </span>
+        </div>
       </div>
 
       {/* RIGHT: fixed columns matching FileListItem */}
@@ -222,7 +227,7 @@ export function FolderCard({ folder, isSelected, isSelecting, onSelect, onClick,
       <ContextMenuTrigger asChild>
     <div
       className={`
-        relative group rounded-2xl p-5 transition-all duration-300 cursor-pointer select-none
+        relative group rounded-2xl p-6 sm:p-5 transition-all duration-300 cursor-pointer select-none
         ${isSelected ? "bg-primary/10 border border-primary/30 shadow-lg shadow-primary/10" : "glass-panel hover:-translate-y-1 hover:shadow-xl"}
       `}
       onClick={() => {

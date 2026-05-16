@@ -485,7 +485,7 @@ export default function Dashboard() {
       <div className={`flex gap-6 ${previewFile ? "h-full" : ""}`}>
       <ContextMenu>
         <ContextMenuTrigger asChild>
-      <div className={`${previewFile ? "flex-1 min-w-0 overflow-y-auto" : "w-full"} max-w-7xl mx-auto pb-32`}>
+      <div className={`${previewFile ? "flex-1 min-w-0 overflow-y-auto" : "w-full"} pb-32`}>
         {/* Page header */}
         <div className="mb-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2 min-w-0">
@@ -574,12 +574,12 @@ export default function Dashboard() {
           </div>
         ) : viewMode === "grid" ? (
           /* ── Grid view ─────────────────────────────────────────────────── */
-          <div className="space-y-8">
+          <div className="space-y-6 sm:space-y-8">
             {/* Folder grid section */}
             {inlineFolders.length > 0 && (
               <div>
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Folders</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 sm:gap-6">
                   {inlineFolders.map(folder => (
                     <FolderCard
                       key={folder.id}
@@ -601,7 +601,7 @@ export default function Dashboard() {
                 {inlineFolders.length > 0 && (
                   <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Files</h3>
                 )}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 sm:gap-6">
                   {filteredFiles.map(file => (
                     <FileCard
                       key={file.id}
@@ -625,7 +625,7 @@ export default function Dashboard() {
           /* ── List view ─────────────────────────────────────────────────── */
           <div className="rounded-xl border border-white/[0.07] overflow-hidden">
             {/* Sortable column header */}
-            <div className="flex items-center justify-between px-3 py-2 text-[11px] font-medium text-muted-foreground/60 uppercase tracking-wider select-none border-b border-white/[0.07] bg-white/[0.02]">
+            <div className="flex items-center justify-between px-4 py-3 sm:px-4 sm:py-2.5 text-[11px] font-medium text-muted-foreground/60 uppercase tracking-wider select-none border-b border-white/[0.07] bg-white/[0.02]">
               {/* LEFT */}
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 <div

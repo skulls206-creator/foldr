@@ -114,9 +114,9 @@ export function FileListItem({
           </div>
         )}
 
-        {/* Icon */}
-        <div className={`relative ${dc.iconWrap} rounded-md bg-white/5 flex-shrink-0`}>
-          <FileIconDisplay mimeType={file.mimeType} className={dc.iconSize} />
+        {/* Icon — slightly larger on comfortable density */}
+        <div className={`relative ${density === "comfortable" ? "p-2 sm:p-1.5" : dc.iconWrap} rounded-md bg-white/5 flex-shrink-0`}>
+          <FileIconDisplay mimeType={file.mimeType} className={density === "comfortable" ? "w-5 h-5 sm:w-4 sm:h-4" : dc.iconSize} />
           {file.isEncrypted && (
             <div className="absolute -bottom-0.5 -right-0.5 bg-accent p-0.5 rounded-full border border-background">
               <Lock className="w-2 h-2 text-white" />
@@ -124,8 +124,14 @@ export function FileListItem({
           )}
         </div>
         
-        {/* Name — single line only */}
-        <span className="text-sm font-medium truncate text-foreground/85 flex-1 min-w-0">{file.name}</span>
+        {/* Name + mobile subtitle */}
+        <div className="flex-1 min-w-0">
+          <span className="text-sm font-medium truncate block text-foreground/85">{file.name}</span>
+          {/* Show date + size below name on mobile, since right columns are hidden */}
+          <span className="text-[11px] text-muted-foreground/50 sm:hidden block truncate mt-0.5">
+            {formatBytes(file.size)} <span className="mx-1">·</span> {format(new Date(file.createdAt), 'MMM d, yyyy')}
+          </span>
+        </div>
       </div>
 
       {/* Right fixed columns */}
