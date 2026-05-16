@@ -634,7 +634,7 @@ export default function Dashboard() {
           /* ── List view ─────────────────────────────────────────────────── */
           <div className="rounded-none sm:rounded-xl border-0 sm:border border-white/[0.07] overflow-hidden">
             {/* Sortable column header */}
-            <div className="flex items-center justify-between px-3 sm:px-4 py-3 sm:py-2.5 text-[11px] font-medium text-muted-foreground/60 uppercase tracking-wider select-none border-b border-white/[0.07] bg-white/[0.02]">
+            <div className="flex items-center justify-between px-2 sm:px-4 py-3 sm:py-2.5 text-[11px] font-medium text-muted-foreground/60 uppercase tracking-wider select-none border-b border-white/[0.07] bg-white/[0.02]">
               {/* LEFT */}
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 <div

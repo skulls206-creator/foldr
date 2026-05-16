@@ -104,10 +104,10 @@ export function FileListItem({
       onDoubleClick={handleDoubleClick}
     >
       <div className={`flex items-center ${dc.gap} flex-1 min-w-0`}>
-        {/* Checkbox */}
+        {/* Checkbox — collapsed to 0 width when hidden so it doesn't steal space */}
         {onSelect && (
           <div
-            className={`flex-shrink-0 transition-opacity ${isSelected || isSelecting ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+            className={`flex-shrink-0 overflow-hidden transition-all duration-100 ${isSelected || isSelecting ? "w-4 opacity-100" : "w-0 opacity-0 group-hover:w-4 group-hover:opacity-100"}`}
             onClick={e => { e.stopPropagation(); onSelect(file.id, !isSelected); }}
           >
             <Checkbox
