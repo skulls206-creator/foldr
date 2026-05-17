@@ -41,6 +41,9 @@ jobs:
           BASE_PATH: /
           PORT: "3000"
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_GIT_COUNT: ${{ github.run_number }}
+          VITE_GIT_SHA: ${{ github.sha }}
+          VITE_BUILD_DATE: ${{ github.run_started_at || '' }}
         run: pnpm --filter @workspace/foldr-storage build
 
       - name: Setup Pages

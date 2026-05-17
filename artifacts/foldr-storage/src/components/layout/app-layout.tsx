@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useLocation } from "wouter";
 import { 
   Lock, 
@@ -403,6 +403,17 @@ function SidebarInner({
           >
             <LogOut className="w-3.5 h-3.5" />
           </Button>
+        </div>
+
+        {/* Build version — auto-updates with each deploy */}
+        <div className="flex items-center justify-center gap-1.5 pt-0.5 opacity-40 hover:opacity-80 transition-opacity">
+          <span className="text-[9px] font-mono text-muted-foreground/50">
+            Build {import.meta.env.VITE_GIT_COUNT || "?"}
+          </span>
+          <span className="text-[9px] font-mono text-muted-foreground/30">·</span>
+          <span className="text-[9px] font-mono text-muted-foreground/30">
+            {import.meta.env.VITE_GIT_SHA || "?"}
+          </span>
         </div>
       </SidebarFooter>
     </>
