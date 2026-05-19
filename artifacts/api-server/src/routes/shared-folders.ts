@@ -10,7 +10,7 @@ router.get("/:token", async (req: Request, res: Response) => {
   const [share] = await db
     .select()
     .from(folderSharesTable)
-    .where(eq(folderSharesTable.token, req.params.token))
+    .where(eq(folderSharesTable.token, req.params.token as string))
     .limit(1);
 
   if (!share) {
@@ -50,7 +50,7 @@ router.get("/:token", async (req: Request, res: Response) => {
       parentId: folder.parentId ?? null,
       createdAt: folder.createdAt.toISOString(),
     },
-    files: files.map(f => ({
+    files: files.map((f: typeof filesTable.$inferSelect) => ({
       id: f.id,
       name: f.name,
       size: Number(f.size),
@@ -60,7 +60,7 @@ router.get("/:token", async (req: Request, res: Response) => {
       storageBackend: f.storageBackend,
       createdAt: f.createdAt.toISOString(),
     })),
-    subFolders: subFolders.map(sf => ({
+    subFolders: subFolders.map((sf: typeof foldersTable.$inferSelect) => ({
       id: sf.id,
       name: sf.name,
       createdAt: sf.createdAt.toISOString(),

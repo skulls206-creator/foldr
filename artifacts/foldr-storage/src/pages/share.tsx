@@ -12,6 +12,7 @@ export default function SharePage() {
 
   const { data, isLoading, error } = useGetSharedFile(token, {
     query: {
+      queryKey: ["sharedFile", token],
       enabled: !!token,
       retry: false
     }

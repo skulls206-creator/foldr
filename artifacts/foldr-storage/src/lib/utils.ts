@@ -10,9 +10,10 @@ export function cn(...inputs: ClassValue[]) {
  * On GitHub Pages this is `https://foldr.khurk.services`.
  */
 export function apiUrl(): string {
-  return (typeof import.meta !== "undefined" &&
-    (import.meta.env.VITE_API_URL as string | undefined)) ??
-    "";
+  const url = typeof import.meta !== "undefined"
+    ? (import.meta.env.VITE_API_URL as string | undefined)
+    : undefined;
+  return url ?? "";
 }
 
 export function formatBytes(bytes: number, decimals = 2) {

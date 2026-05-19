@@ -6,7 +6,7 @@ import { getAdapter, getLegacyDownloadUrl } from "../lib/storage";
 
 const router: IRouter = Router();
 
-async function resolveShareLink(token: string, incrementView = false) {
+async function resolveShareLink(token: string, incrementView = false): Promise<{ error: string; status: number } | { shareLink: typeof shareLinksTable.$inferSelect; file: typeof filesTable.$inferSelect }> {
   const [shareLink] = await db
     .select()
     .from(shareLinksTable)
@@ -38,7 +38,7 @@ async function resolveShareLink(token: string, incrementView = false) {
 }
 
 router.get("/share/:token", async (req: Request, res: Response) => {
-  const result = await resolveShareLink(req.params.token, true);
+  const result = await resolveShareLink(req.params.token as string, true);
   if ("error" in result) {
     res.status(result.status).json({ error: result.error });
     return;
@@ -82,7 +82,7 @@ router.get("/share/:token", async (req: Request, res: Response) => {
 
 // Download endpoint for share links — handles decryption server-side for encrypted files
 router.get("/share/:token/download", async (req: Request, res: Response) => {
-  const result = await resolveShareLink(req.params.token, false);
+  const result = await resolveShareLink(req.params.token as string, false);
   if ("error" in result) {
     res.status(result.status).json({ error: result.error });
     return;

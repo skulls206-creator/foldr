@@ -344,7 +344,7 @@ export function useFolderSync() {
     async function onMessage(event: MessageEvent) {
       if (event.data?.type !== "khurk:fs-directory") return;
       const handle: FileSystemDirectoryHandle | undefined = event.data.handle;
-      if (!handle || typeof handle.values !== "function") return;
+      if (!handle || typeof (handle as any).values !== "function") return;
       try {
         // The parent already has permission; confirm readwrite for this frame.
         const perm = await (handle as any).requestPermission({ mode: "readwrite" });

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { customFetch, getBaseUrl } from "./custom-fetch";
-import type { File, Folder, FolderListResponse } from "./generated/api.schemas";
+import type { File, FileListResponse, Folder, FolderListResponse } from "./generated/api.schemas";
 
 export interface StorageUsage {
   usedBytes: number;

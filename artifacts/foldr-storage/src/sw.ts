@@ -65,15 +65,15 @@ registerRoute(
 self.addEventListener("push", (event) => {
   const data = event.data?.json() ?? {};
   const title = data.title ?? "FOLDR";
-  const options: NotificationOptions = {
+  const options = {
     body: data.body ?? "You have a new notification.",
     icon: "/icon-192.png",
     badge: "/icon-192.png",
     data: { url: data.url ?? "/" },
     tag: data.tag ?? "foldr-notification",
     renotify: Boolean(data.renotify),
-  };
-  event.waitUntil(self.registration.showNotification(title, options));
+  } as NotificationOptions;
+  event.waitUntil(self.registration.showNotification(title, options as unknown as NotificationOptions));
 });
 
 self.addEventListener("notificationclick", (event) => {

@@ -2,6 +2,24 @@
 
 > Also see `AGENTS.md` for how both AI agents collaborate on this project.
 
+## 2026-05-18 — TypeScript strict mode enabled + 20+ type fixes
+**Author:** Satoshi (OpenClaw)
+**Scope:** `tsconfig.base.json`, `lib/api-client-react/` (index.ts, custom-hooks.ts, generated/api.schemas.ts), `lib/api-zod/` (index.ts, tsconfig.json), `artifacts/api-server/src/routes/` (files.ts, folders.ts, share.ts, shared-folders.ts), `artifacts/foldr-storage/src/` (dashboard.tsx, sharing.tsx, share.tsx, auth.tsx, utils.ts, sw.ts, use-folder-sync.ts, file-card.tsx, file-right-click-menu.tsx), `lib/api-zod/tsconfig.json`
+**Changes:**
+- Enabled `strict: true` in `tsconfig.base.json`
+- **Lib fixes:** Fixed duplicate re-exports in index.ts (api-client-react + api-zod), added missing DOM lib to api-zod tsconfig for Blob/File types, added Folder/FolderListResponse interfaces (were aliases to File types), added isStarred to File, added fileName/label/viewCount/downloadCount/maxViews to ShareLink, fixed Folder→File import in custom-hooks
+- **API server fixes:** Added `as string` casts to all `req.params.*` references (Express type issue with string|string[]), fixed implicit any on destructured query result params, fixed resolveShareLink return type for proper status field inference
+- **Frontend fixes:** Added `queryKey` to all useQuery options (React Query v5 requirement), fixed apiUrl() falsy return, fixed renotify in service worker (NotificationOptions cast), fixed FileSystemDirectoryHandle.values type, fixed isStarred references, fixed rename/folder-share mutation parameter shapes (flat params vs nested data object)
+- `pnpm run typecheck` passes clean across all 4 artifacts (api-server, foldr-storage, mockup-sandbox, scripts)
+
+**Notes for next AI:**
+- Strict mode is now enforced. Run `pnpm run typecheck` after any change.
+- `req.params.x` access needs `as string` cast in Express route handlers.
+- React Query v5 requires `queryKey` in query options — the orval-generated hooks merge it internally, but TypeScript must see it in the call site.
+- The api.schemas.ts file has been extended with fields (isStarred, Folder, FolderListResponse, ShareLink extras) that the API returns but orval/generator hasn't updated yet. Keep extensions if regenerating.
+
+---
+
 ## Unreleased / In Development
 
 ### Flush-Left Icons on Mobile

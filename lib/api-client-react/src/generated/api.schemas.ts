@@ -55,6 +55,19 @@ export const FileStorageBackend = {
 
 export type FileAccessCondition = { [key: string]: unknown } | null;
 
+export interface Folder {
+  id: string;
+  name: string;
+  parentId: string | null;
+  totalSize: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FolderListResponse {
+  folders: Folder[];
+}
+
 export interface File {
   id: string;
   userId: string;
@@ -66,6 +79,7 @@ export interface File {
   storageBackend: FileStorageBackend;
   isEncrypted: boolean;
   isDeleted: boolean;
+  isStarred: boolean;
   accessCondition?: FileAccessCondition;
   createdAt: string;
   updatedAt: string;
@@ -85,6 +99,11 @@ export interface ShareLink {
   url: string;
   expiresAt?: string | null;
   createdAt: string;
+  fileName?: string;
+  label?: string;
+  viewCount?: number;
+  downloadCount?: number;
+  maxViews?: number | null;
 }
 
 export interface SharedFileResponse {

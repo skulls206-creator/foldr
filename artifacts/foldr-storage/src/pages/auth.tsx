@@ -28,7 +28,7 @@ export default function AuthPage() {
   const [totpState, setTotpState] = useState<{ required: false } | { required: true; pendingToken: string }>({ required: false });
   const [totpCode, setTotpCode] = useState("");
   
-  const { data: user, isLoading: checkingAuth } = useGetMe({ query: { retry: false } });
+  const { data: user, isLoading: checkingAuth } = useGetMe({ query: { queryKey: ["getMe"], retry: false } });
   const loginMutation = useLogin();
   const registerMutation = useRegister();
   const totpChallengeMutation = useTotpChallenge();

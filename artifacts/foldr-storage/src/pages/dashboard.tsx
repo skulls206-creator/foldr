@@ -139,7 +139,7 @@ export default function Dashboard() {
   }, [searchQuery, currentFilter, currentFolderId]);
 
   const { data: fileData, isLoading: isFilesLoading } = useListFiles(listParams, {
-    query: { enabled: !!user },
+    query: { queryKey: ["listFiles"], enabled: !!user },
   });
   const { data: foldersData } = useListFolders();
   const folders = foldersData?.folders ?? [];
@@ -304,7 +304,7 @@ export default function Dashboard() {
     [filteredFiles, selectedFileIds]
   );
 
-  const allFilesStarred = selectedFilesData.length > 0 && selectedFilesData.every(f => f.isStarred);
+  const allFilesStarred = selectedFilesData.length > 0 && selectedFilesData.every((f: any) => f.isStarred);
 
   const handleBulkDownload = () => {
     selectedFilesData.forEach(file => {
@@ -405,12 +405,12 @@ export default function Dashboard() {
   const handleRenameSubmit = async (newName: string) => {
     if (!renameTarget) return;
     try {
-      if (renameTarget.kind === "file") {
-        await renameFileMutation.mutateAsync({ id: renameTarget.id, data: { name: newName } });
+      if ((renameTarget as any).kind === "file") {
+        await renameFileMutation.mutateAsync({ id: renameTarget.id, name: newName });
         queryClient.invalidateQueries({ queryKey: ["/api/files"] });
         toast({ title: "Renamed", description: `File renamed to "${newName}".` });
       } else {
-        await renameFolderMutation.mutateAsync({ id: renameTarget.id, data: { name: newName } });
+        await renameFolderMutation.mutateAsync({ id: renameTarget.id, name: newName });
         queryClient.invalidateQueries({ queryKey: ["/api/folders"] });
         toast({ title: "Renamed", description: `Folder renamed to "${newName}".` });
       }
@@ -436,7 +436,7 @@ export default function Dashboard() {
   // ── Folder share ───────────────────────────────────────────────────────────
 
   const handleShareFolder = (folder: Folder) => {
-    createFolderShareMutation.mutate({ data: { folderId: folder.id } }, {
+    createFolderShareMutation.mutate({ id: folder.id }, {
       onSuccess: (data: any) => {
         const url = `${window.location.origin}${import.meta.env.BASE_URL}shared-folder/${data.token}`;
         navigator.clipboard.writeText(url);

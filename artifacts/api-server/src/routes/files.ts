@@ -3,6 +3,7 @@ import multer from "multer";
 import crypto from "crypto";
 import archiver from "archiver";
 import sharp from "sharp";
+import { Readable } from "stream";
 import { db } from "@workspace/db";
 import { filesTable, shareLinksTable, fileVersionsTable, foldersTable } from "@workspace/db";
 import { eq, and, desc, like, count, isNull, sum, inArray, sql } from "drizzle-orm";
@@ -10,8 +11,42 @@ import { requireAuth } from "../middlewares/auth";
 import { getAdapter, getLegacyDownloadUrl } from "../lib/storage";
 import { logActivity } from "../lib/activity";
 
+// ── Allowed MIME types for upload ────────────────────────────────────────────
+const ALLOWED_MIME_TYPES = new Set([
+  // Images
+  "image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml", "image/bmp", "image/tiff",
+  // Documents
+  "application/pdf", "text/plain", "text/csv", "text/html", "text/markdown",
+  "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  // Archives
+  "application/zip", "application/x-zip-compressed", "application/gzip", "application/x-tar",
+  "application/x-rar-compressed", "application/x-7z-compressed",
+  // Media
+  "audio/mpeg", "audio/ogg", "audio/wav", "audio/webm", "audio/flac",
+  "video/mp4", "video/webm", "video/ogg", "video/x-msvideo",
+  // Code / data
+  "application/json", "application/xml", "text/xml", "text/javascript", "text/css",
+  "application/typescript", "application/wasm",
+  // Common generic
+  "application/octet-stream",
+]);
+
+function fileFilter(_req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) {
+  if (ALLOWED_MIME_TYPES.has(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error(`File type "${file.mimetype}" is not allowed`));
+  }
+}
+
 const router: IRouter = Router();
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({
+  storage: multer.memoryStorage(),
+  fileFilter,
+  limits: { fileSize: 100 * 1024 * 1024 },
+});
 
 function toFileResponse(file: typeof filesTable.$inferSelect) {
   return {
@@ -225,9 +260,8 @@ router.post("/bulk-delete", requireAuth, async (req: Request, res: Response) => 
 
   for (const file of files) {
     await db.update(filesTable).set({ isDeleted: true, updatedAt: new Date() }).where(eq(filesTable.id, file.id));
-    if (file.storageBackend === "r2") {
-      try { await getAdapter().deleteFile(file.cid); } catch {}
-    }
+    // Soft-delete does NOT delete R2 storage — only marks in DB.
+    // Use the empty-trash endpoint or hard-delete for storage cleanup.
   }
   res.json({ deleted: files.length });
 });
@@ -261,6 +295,9 @@ router.post("/bulk-move", requireAuth, async (req: Request, res: Response) => {
 
 // ── Bulk ZIP download ────────────────────────────────────────────────────────
 
+// Maximum total decompressed size before ZIP generation is rejected (512 MB)
+const MAX_BULK_DOWNLOAD_TOTAL_BYTES = 512 * 1024 * 1024;
+
 router.post("/bulk-download", requireAuth, async (req: Request, res: Response) => {
   const { ids } = req.body ?? {};
   if (!Array.isArray(ids) || ids.length === 0) {
@@ -275,6 +312,15 @@ router.post("/bulk-download", requireAuth, async (req: Request, res: Response) =
 
   if (files.length === 0) { res.status(404).json({ error: "No files found" }); return; }
 
+  // Check total size before starting to prevent memory exhaustion
+  const totalSize = files.reduce((sum, f) => sum + Number(f.size), 0);
+  if (totalSize > MAX_BULK_DOWNLOAD_TOTAL_BYTES) {
+    res.status(413).json({
+      error: `Total download size (${(totalSize / 1024 / 1024).toFixed(1)} MB) exceeds maximum (${MAX_BULK_DOWNLOAD_TOTAL_BYTES / 1024 / 1024} MB). Please select fewer files.`,
+    });
+    return;
+  }
+
   const adapter = getAdapter();
   res.setHeader("Content-Type", "application/zip");
   res.setHeader("Content-Disposition", `attachment; filename="foldr-download-${Date.now()}.zip"`);
@@ -284,19 +330,27 @@ router.post("/bulk-download", requireAuth, async (req: Request, res: Response) =
 
   for (const file of files) {
     try {
-      let fileBuffer: Buffer;
       if (file.isEncrypted) {
         if (file.storageBackend !== "r2") continue;
-        fileBuffer = await adapter.downloadAndDecrypt(file.cid, file.id);
+        // Stream decrypt — still buffers per-file for archiver append, but
+        // we avoid holding the full ZIP in memory all at once via archiver
+        // streaming to res.
+        const decrypted = await adapter.downloadAndDecrypt(file.cid, file.id);
+        archive.append(decrypted, { name: file.name });
       } else {
-        const downloadUrl = file.storageBackend === "r2"
-          ? await adapter.downloadUrl(file.cid)
-          : getLegacyDownloadUrl(file.storageBackend, file.cid);
-        const resp = await fetch(downloadUrl);
-        if (!resp.ok) continue;
-        fileBuffer = Buffer.from(await resp.arrayBuffer());
+        if (file.storageBackend === "r2") {
+          // Use a stream from R2 directly into the ZIP
+          const resp = await adapter.downloadUrl(file.cid);
+          const fetchResp = await fetch(resp);
+          if (!fetchResp.ok || !fetchResp.body) continue;
+          archive.append(Readable.fromWeb(fetchResp.body as any), { name: file.name });
+        } else {
+          const downloadUrl = getLegacyDownloadUrl(file.storageBackend, file.cid);
+          const fetchResp = await fetch(downloadUrl);
+          if (!fetchResp.ok || !fetchResp.body) continue;
+          archive.append(Readable.fromWeb(fetchResp.body as any), { name: file.name });
+        }
       }
-      archive.append(fileBuffer, { name: file.name });
     } catch {
       // Skip files that fail — include what we can
     }
@@ -358,7 +412,7 @@ router.get("/share-links", requireAuth, async (req: Request, res: Response) => {
     .limit(200);
 
   res.json({
-    shareLinks: links.map(({ sl, file }) => toShareLinkResponse(sl, file.name)),
+    shareLinks: links.map(({ sl, file }: { sl: typeof shareLinksTable.$inferSelect; file: typeof filesTable.$inferSelect }) => toShareLinkResponse(sl, file.name)),
   });
 });
 
@@ -368,12 +422,12 @@ router.delete("/share-links/:linkId", requireAuth, async (req: Request, res: Res
     .select({ sl: shareLinksTable, file: filesTable })
     .from(shareLinksTable)
     .innerJoin(filesTable, eq(shareLinksTable.fileId, filesTable.id))
-    .where(and(eq(shareLinksTable.id, req.params.linkId), eq(filesTable.userId, req.userId!)))
+    .where(and(eq(shareLinksTable.id, req.params.linkId as string), eq(filesTable.userId, req.userId!)))
     .limit(1);
 
   if (!sl) { res.status(404).json({ error: "Share link not found" }); return; }
 
-  await db.delete(shareLinksTable).where(eq(shareLinksTable.id, req.params.linkId));
+  await db.delete(shareLinksTable).where(eq(shareLinksTable.id, req.params.linkId as string));
 
   logActivity({
     userId: req.userId!,
@@ -392,7 +446,7 @@ router.get("/:id", requireAuth, async (req: Request, res: Response) => {
   const [file] = await db
     .select()
     .from(filesTable)
-    .where(and(eq(filesTable.id, req.params.id), eq(filesTable.userId, req.userId!), eq(filesTable.isDeleted, false)))
+    .where(and(eq(filesTable.id, req.params.id as string), eq(filesTable.userId, req.userId!), eq(filesTable.isDeleted, false)))
     .limit(1);
 
   if (!file) {
@@ -414,7 +468,7 @@ router.patch("/:id/rename", requireAuth, async (req: Request, res: Response) => 
   const [file] = await db
     .select()
     .from(filesTable)
-    .where(and(eq(filesTable.id, req.params.id), eq(filesTable.userId, req.userId!), eq(filesTable.isDeleted, false)))
+    .where(and(eq(filesTable.id, req.params.id as string), eq(filesTable.userId, req.userId!), eq(filesTable.isDeleted, false)))
     .limit(1);
 
   if (!file) {
@@ -446,7 +500,7 @@ router.patch("/:id/star", requireAuth, async (req: Request, res: Response) => {
   const [file] = await db
     .select()
     .from(filesTable)
-    .where(and(eq(filesTable.id, req.params.id), eq(filesTable.userId, req.userId!), eq(filesTable.isDeleted, false)))
+    .where(and(eq(filesTable.id, req.params.id as string), eq(filesTable.userId, req.userId!), eq(filesTable.isDeleted, false)))
     .limit(1);
 
   if (!file) {
@@ -478,7 +532,7 @@ router.patch("/:id/move", requireAuth, async (req: Request, res: Response) => {
   const [file] = await db
     .select()
     .from(filesTable)
-    .where(and(eq(filesTable.id, req.params.id), eq(filesTable.userId, req.userId!), eq(filesTable.isDeleted, false)))
+    .where(and(eq(filesTable.id, req.params.id as string), eq(filesTable.userId, req.userId!), eq(filesTable.isDeleted, false)))
     .limit(1);
 
   if (!file) {
@@ -510,7 +564,7 @@ router.patch("/:id/restore", requireAuth, async (req: Request, res: Response) =>
   const [file] = await db
     .select()
     .from(filesTable)
-    .where(and(eq(filesTable.id, req.params.id), eq(filesTable.userId, req.userId!), eq(filesTable.isDeleted, true)))
+    .where(and(eq(filesTable.id, req.params.id as string), eq(filesTable.userId, req.userId!), eq(filesTable.isDeleted, true)))
     .limit(1);
 
   if (!file) {
@@ -541,7 +595,7 @@ router.delete("/:id", requireAuth, async (req: Request, res: Response) => {
   const [file] = await db
     .select()
     .from(filesTable)
-    .where(and(eq(filesTable.id, req.params.id), eq(filesTable.userId, req.userId!), eq(filesTable.isDeleted, false)))
+    .where(and(eq(filesTable.id, req.params.id as string), eq(filesTable.userId, req.userId!), eq(filesTable.isDeleted, false)))
     .limit(1);
 
   if (!file) {
@@ -554,13 +608,8 @@ router.delete("/:id", requireAuth, async (req: Request, res: Response) => {
     .set({ isDeleted: true, updatedAt: new Date() })
     .where(eq(filesTable.id, file.id));
 
-  if (file.storageBackend === "r2") {
-    try {
-      await getAdapter().deleteFile(file.cid);
-    } catch (err: any) {
-      req.log.warn({ err }, "R2 deleteFile failed after soft-delete; continuing");
-    }
-  }
+  // Soft-delete does NOT delete R2 storage — only marks in DB.
+  // Use DELETE /:id/hard for immediate storage cleanup.
 
   logActivity({
     userId: req.userId!,
@@ -573,13 +622,50 @@ router.delete("/:id", requireAuth, async (req: Request, res: Response) => {
   res.json({ message: "File moved to trash" });
 });
 
+// ── Hard delete ─────────────────────────────────────────────────────────
+
+router.delete("/:id/hard", requireAuth, async (req: Request, res: Response) => {
+  const [file] = await db
+    .select()
+    .from(filesTable)
+    .where(and(eq(filesTable.id, req.params.id as string), eq(filesTable.userId, req.userId!)))
+    .limit(1);
+
+  if (!file) {
+    res.status(404).json({ error: "File not found" });
+    return;
+  }
+
+  // Delete from R2 storage
+  if (file.storageBackend === "r2") {
+    try {
+      await getAdapter().deleteFile(file.cid);
+    } catch (err: any) {
+      req.log.warn({ err }, "R2 deleteFile failed during hard-delete");
+    }
+  }
+
+  // Delete from database (cascades to share links, versions, etc.)
+  await db.delete(filesTable).where(eq(filesTable.id, file.id));
+
+  logActivity({
+    userId: req.userId!,
+    action: "hard_delete",
+    resourceType: "file",
+    resourceId: file.id,
+    resourceName: file.name,
+  });
+
+  res.json({ message: "File permanently deleted" });
+});
+
 // ── Versions ─────────────────────────────────────────────────────────────
 
 router.get("/:id/versions", requireAuth, async (req: Request, res: Response) => {
   const [file] = await db
     .select()
     .from(filesTable)
-    .where(and(eq(filesTable.id, req.params.id), eq(filesTable.userId, req.userId!)))
+    .where(and(eq(filesTable.id, req.params.id as string), eq(filesTable.userId, req.userId!)))
     .limit(1);
 
   if (!file) {
@@ -594,7 +680,7 @@ router.get("/:id/versions", requireAuth, async (req: Request, res: Response) => 
     .orderBy(desc(fileVersionsTable.createdAt));
 
   res.json({
-    versions: versions.map(v => ({
+    versions: versions.map((v: typeof fileVersionsTable.$inferSelect) => ({
       id: v.id,
       fileId: v.fileId,
       versionNumber: v.versionNumber,
@@ -612,7 +698,7 @@ router.post("/:id/versions/:versionId/restore", requireAuth, async (req: Request
   const [file] = await db
     .select()
     .from(filesTable)
-    .where(and(eq(filesTable.id, req.params.id), eq(filesTable.userId, req.userId!), eq(filesTable.isDeleted, false)))
+    .where(and(eq(filesTable.id, req.params.id as string), eq(filesTable.userId, req.userId!), eq(filesTable.isDeleted, false)))
     .limit(1);
 
   if (!file) { res.status(404).json({ error: "File not found" }); return; }
@@ -620,7 +706,7 @@ router.post("/:id/versions/:versionId/restore", requireAuth, async (req: Request
   const [version] = await db
     .select()
     .from(fileVersionsTable)
-    .where(and(eq(fileVersionsTable.id, req.params.versionId), eq(fileVersionsTable.fileId, file.id)))
+    .where(and(eq(fileVersionsTable.id, req.params.versionId as string), eq(fileVersionsTable.fileId, file.id)))
     .limit(1);
 
   if (!version) { res.status(404).json({ error: "Version not found" }); return; }
@@ -667,7 +753,7 @@ router.post("/:id/share-link", requireAuth, async (req: Request, res: Response) 
   const [file] = await db
     .select()
     .from(filesTable)
-    .where(and(eq(filesTable.id, req.params.id), eq(filesTable.userId, req.userId!), eq(filesTable.isDeleted, false)))
+    .where(and(eq(filesTable.id, req.params.id as string), eq(filesTable.userId, req.userId!), eq(filesTable.isDeleted, false)))
     .limit(1);
 
   if (!file) {
@@ -732,7 +818,7 @@ router.get("/:id/share-links", requireAuth, async (req: Request, res: Response) 
   const [file] = await db
     .select()
     .from(filesTable)
-    .where(and(eq(filesTable.id, req.params.id), eq(filesTable.userId, req.userId!)))
+    .where(and(eq(filesTable.id, req.params.id as string), eq(filesTable.userId, req.userId!)))
     .limit(1);
 
   if (!file) { res.status(404).json({ error: "File not found" }); return; }
@@ -743,14 +829,14 @@ router.get("/:id/share-links", requireAuth, async (req: Request, res: Response) 
     .where(eq(shareLinksTable.fileId, file.id))
     .orderBy(desc(shareLinksTable.createdAt));
 
-  res.json({ shareLinks: links.map(sl => toShareLinkResponse(sl, file.name)) });
+  res.json({ shareLinks: links.map((sl: typeof shareLinksTable.$inferSelect) => toShareLinkResponse(sl, file.name)) });
 });
 
 router.post("/:id/share-encrypted", requireAuth, async (req: Request, res: Response) => {
   const [file] = await db
     .select()
     .from(filesTable)
-    .where(and(eq(filesTable.id, req.params.id), eq(filesTable.userId, req.userId!), eq(filesTable.isDeleted, false)))
+    .where(and(eq(filesTable.id, req.params.id as string), eq(filesTable.userId, req.userId!), eq(filesTable.isDeleted, false)))
     .limit(1);
 
   if (!file) { res.status(404).json({ error: "File not found" }); return; }
@@ -776,7 +862,7 @@ router.delete("/:id/revoke-access", requireAuth, async (req: Request, res: Respo
   const [file] = await db
     .select()
     .from(filesTable)
-    .where(and(eq(filesTable.id, req.params.id), eq(filesTable.userId, req.userId!), eq(filesTable.isDeleted, false)))
+    .where(and(eq(filesTable.id, req.params.id as string), eq(filesTable.userId, req.userId!), eq(filesTable.isDeleted, false)))
     .limit(1);
 
   if (!file) { res.status(404).json({ error: "File not found" }); return; }
@@ -802,7 +888,7 @@ router.post("/:id/set-token-gate", requireAuth, async (req: Request, res: Respon
   const [file] = await db
     .select()
     .from(filesTable)
-    .where(and(eq(filesTable.id, req.params.id), eq(filesTable.userId, req.userId!), eq(filesTable.isDeleted, false)))
+    .where(and(eq(filesTable.id, req.params.id as string), eq(filesTable.userId, req.userId!), eq(filesTable.isDeleted, false)))
     .limit(1);
 
   if (!file) { res.status(404).json({ error: "File not found" }); return; }
@@ -855,7 +941,7 @@ router.get("/:id/thumbnail", requireAuth, async (req: Request, res: Response) =>
   const [file] = await db
     .select()
     .from(filesTable)
-    .where(and(eq(filesTable.id, req.params.id), eq(filesTable.userId, req.userId!), eq(filesTable.isDeleted, false)))
+    .where(and(eq(filesTable.id, req.params.id as string), eq(filesTable.userId, req.userId!), eq(filesTable.isDeleted, false)))
     .limit(1);
 
   if (!file || !file.thumbnailCid) { res.status(404).json({ error: "Thumbnail not found" }); return; }
@@ -873,7 +959,7 @@ router.get("/:id/download", requireAuth, async (req: Request, res: Response) => 
   const [file] = await db
     .select()
     .from(filesTable)
-    .where(and(eq(filesTable.id, req.params.id), eq(filesTable.userId, req.userId!), eq(filesTable.isDeleted, false)))
+    .where(and(eq(filesTable.id, req.params.id as string), eq(filesTable.userId, req.userId!), eq(filesTable.isDeleted, false)))
     .limit(1);
 
   if (!file) { res.status(404).json({ error: "File not found" }); return; }
@@ -906,7 +992,7 @@ router.get("/:id/decrypt", requireAuth, async (req: Request, res: Response) => {
   const [file] = await db
     .select()
     .from(filesTable)
-    .where(and(eq(filesTable.id, req.params.id), eq(filesTable.userId, req.userId!), eq(filesTable.isDeleted, false)))
+    .where(and(eq(filesTable.id, req.params.id as string), eq(filesTable.userId, req.userId!), eq(filesTable.isDeleted, false)))
     .limit(1);
 
   if (!file) { res.status(404).json({ error: "File not found" }); return; }

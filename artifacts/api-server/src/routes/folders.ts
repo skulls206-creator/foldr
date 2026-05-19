@@ -80,7 +80,7 @@ router.patch("/:id/rename", requireAuth, async (req: Request, res: Response) => 
   const [folder] = await db
     .select()
     .from(foldersTable)
-    .where(and(eq(foldersTable.id, req.params.id), eq(foldersTable.userId, req.userId!)))
+    .where(and(eq(foldersTable.id, req.params.id as string), eq(foldersTable.userId, req.userId!)))
     .limit(1);
 
   if (!folder) {
@@ -112,7 +112,7 @@ router.post("/:id/share", requireAuth, async (req: Request, res: Response) => {
   const [folder] = await db
     .select()
     .from(foldersTable)
-    .where(and(eq(foldersTable.id, req.params.id), eq(foldersTable.userId, req.userId!)))
+    .where(and(eq(foldersTable.id, req.params.id as string), eq(foldersTable.userId, req.userId!)))
     .limit(1);
 
   if (!folder) { res.status(404).json({ error: "Folder not found" }); return; }
@@ -162,7 +162,7 @@ router.get("/:id/share", requireAuth, async (req: Request, res: Response) => {
   const [folder] = await db
     .select()
     .from(foldersTable)
-    .where(and(eq(foldersTable.id, req.params.id), eq(foldersTable.userId, req.userId!)))
+    .where(and(eq(foldersTable.id, req.params.id as string), eq(foldersTable.userId, req.userId!)))
     .limit(1);
 
   if (!folder) { res.status(404).json({ error: "Folder not found" }); return; }
@@ -192,7 +192,7 @@ router.delete("/:id/share", requireAuth, async (req: Request, res: Response) => 
   await db
     .delete(folderSharesTable)
     .where(and(
-      eq(folderSharesTable.folderId, req.params.id),
+      eq(folderSharesTable.folderId, req.params.id as string),
       eq(folderSharesTable.userId, req.userId!)
     ));
 
@@ -223,7 +223,7 @@ router.delete("/:id", requireAuth, async (req: Request, res: Response) => {
   const [folder] = await db
     .select()
     .from(foldersTable)
-    .where(and(eq(foldersTable.id, req.params.id), eq(foldersTable.userId, req.userId!)))
+    .where(and(eq(foldersTable.id, req.params.id as string), eq(foldersTable.userId, req.userId!)))
     .limit(1);
 
   if (!folder) {
