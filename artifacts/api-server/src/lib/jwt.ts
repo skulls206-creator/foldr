@@ -1,9 +1,10 @@
-import jwt from "jsonwebtoken";
+import jwt, { SignOptions } from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
+const raw = process.env.JWT_SECRET;
+if (!raw) {
   throw new Error("JWT_SECRET environment variable is required");
 }
+const JWT_SECRET: string = raw;
 export const COOKIE_NAME = "token";
 
 export function signToken(
@@ -11,7 +12,8 @@ export function signToken(
   extraClaims: Record<string, unknown> = {},
   expiresIn: string | number = "7d"
 ): string {
-  return jwt.sign({ sub: userId, userId, ...extraClaims }, JWT_SECRET, { expiresIn } as jwt.SignOptions);
+  const options: SignOptions = { expiresIn: expiresIn as jwt.SignOptions["expiresIn"] };
+  return jwt.sign({ sub: userId, userId, ...extraClaims }, JWT_SECRET, options);
 }
 
 export function verifyToken(token: string): Record<string, any> {
@@ -24,5 +26,6 @@ export function signTokenWithVersion(
   extraClaims: Record<string, unknown> = {},
   expiresIn: string | number = "7d"
 ): string {
-  return jwt.sign({ sub: userId, userId, tokenVersion, ...extraClaims }, JWT_SECRET, { expiresIn } as jwt.SignOptions);
+  const options: SignOptions = { expiresIn: expiresIn as jwt.SignOptions["expiresIn"] };
+  return jwt.sign({ sub: userId, userId, tokenVersion, ...extraClaims }, JWT_SECRET, options);
 }
